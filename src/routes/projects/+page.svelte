@@ -1,26 +1,26 @@
 <script lang="ts">
-	// 1. Imports
 	import { onMount } from 'svelte';
 	import { projects } from '$lib/data/projects';
 
-	// 2. Types
+	interface Project {
+		id: string | number;
+		imgCover: string;
+		title?: string;
+	}
+
 	type TileSize = { width: number; height: number };
 
-	// 3. State (variables réactives)
+	// 2. State typé
 	let columnCount = 1;
-	let projectColumns: any[][] = [];
+	let projectColumns: Project[][] = []; 
 	let tileSize: TileSize = { width: 350, height: 200 };
 
-	// 4. Lifecycle
 	onMount(() => {
 		updateLayout();
 		window.addEventListener('resize', updateLayout);
 		return () => window.removeEventListener('resize', updateLayout);
 	});
 
-	// 5. Utility functions
-
-	/** Détermine le nombre de colonnes en fonction du nombre de projets */
 	function getColumnCount(length: number): number {
 		if (length <= 6) return 1;
 		if (length <= 12) return 2;
@@ -28,7 +28,6 @@
 		return 4;
 	}
 
-	/** Détermine le max de colonnes en fonction de la taille d'écran */
 	function getMaxColumnsByScreen(): number {
 		const width = window.innerWidth;
 		if (width < 768) return 2;
@@ -36,10 +35,8 @@
 		return 4;
 	}
 
-	/** Calcule la taille des tiles en fonction du nombre de colonnes */
 	function getSizeTile(columns: number): TileSize {
 		const baseSize: TileSize = { width: 750, height: 500 };
-
 		switch (columns) {
 			case 1:
 				return baseSize;
@@ -52,10 +49,11 @@
 		}
 	}
 
-	function splitProjects(projects: any[], columns: number): any[][] {
-		const perColumn = Math.ceil(projects.length / columns);
+	// Typage strict de la fonction split
+	function splitProjects(items: Project[], columns: number): Project[][] {
+		const perColumn = Math.ceil(items.length / columns);
 		return Array.from({ length: columns }, (_, i) =>
-			projects.slice(i * perColumn, (i + 1) * perColumn)
+			items.slice(i * perColumn, (i + 1) * perColumn)
 		);
 	}
 
@@ -77,14 +75,14 @@
 	</div>
 	<div class="slidingProject-content">
 		<div class="absolute-slidingProjects columns-{columnCount}">
-			{#each projectColumns as column, colIndex}
+			{#each projectColumns as column, colIndex (colIndex)}
 				<div class="column {colIndex % 2 === 0 ? 'scroll-down' : 'scroll-up'}">
-					{#each [...column, ...column, ...column] as project}
+					{#each [...column, ...column, ...column] as project, i (`${colIndex}-${i}`)}
 						<div
 							class="project-tile"
 							style="width: {tileSize.width}px; height: {tileSize.height}px;"
 						>
-							<img src={project.imgCover} alt="Miniature projet" />
+							<img src={project.imgCover} alt="Miniature du projet {project.title || ''}" />
 						</div>
 					{/each}
 				</div>
@@ -92,112 +90,3 @@
 		</div>
 	</div>
 </header>
-<main>
-	<section></section>
-	<section></section>
-	<section></section>
-</main>
-
-<style lang="scss">
-	:global(body) {
-		background-color: black;
-	}
-
-	header {
-		color: white;
-		display: flex;
-		position: relative;
-		flex-direction: row;
-		overflow: hidden;
-		width: auto;
-		height: 100vh;
-		padding: 0 15%;
-
-		.header-content {
-			flex: 0.3;
-			display: flex;
-			flex-direction: column;
-			gap: 8px;
-			justify-content: center;
-
-			button {
-				font-family: var(--font-sans);
-				background-color: white;
-				color: black;
-				border: none;
-				padding: 20px 60px;
-				border-radius: 8px;
-				margin-top: 17px;
-				font-size: var(--font-size-xs);
-				font-weight: 800;
-				cursor: pointer;
-			}
-		}
-		.slidingProject-content {
-			display: flex;
-			flex: 0.7;
-			.absolute-slidingProjects {
-				display: flex;
-				position: absolute;
-				gap: 8px;
-				top: 50%;
-				right: -200px;
-				transform: translateY(-50%) rotateZ(15deg);
-				z-index: -1;
-				.column {
-					display: flex;
-					flex-direction: column;
-					justify-content: center;
-					gap: 8px;
-					.project-tile {
-						height: 200px;
-						width: 450px;
-						img {
-							width: 100%;
-							height: 100%;
-							object-fit: cover;
-							border-radius: 8px;
-						}
-					}
-				}
-				.column:nth-child(odd) {
-					margin-top: 100px;
-				}
-				&.columns-1 {
-					right: 175px;
-				}
-			}
-			/* Animation des colonnes */
-			.scroll-up {
-				animation: scroll-up 40s linear infinite;
-			}
-
-			.scroll-down {
-				animation: scroll-down 40s linear infinite;
-			}
-			@keyframes scroll-up {
-				from {
-					transform: translateY(0);
-				}
-				to {
-					transform: translateY(-20%);
-				}
-			}
-
-			@keyframes scroll-down {
-				from {
-					transform: translateY(0);
-				}
-				to {
-					transform: translateY(20%);
-				}
-			}
-		}
-	}
-
-	/* Responsive design (à compléter si besoin) */
-	@media (max-width: 1024px) {
-	}
-	@media (max-width: 768px) {
-	}
-</style>
