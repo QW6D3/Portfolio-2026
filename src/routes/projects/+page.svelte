@@ -12,7 +12,7 @@
 
 	// 2. State typé
 	let columnCount = 1;
-	let projectColumns: Project[][] = []; 
+	let projectColumns: Project[][] = [];
 	let tileSize: TileSize = { width: 350, height: 200 };
 
 	onMount(() => {
