@@ -1,4 +1,6 @@
 <script lang="ts">
 </script>
 
-<main></main>
+<main>
+	<section></section>
+</main>
