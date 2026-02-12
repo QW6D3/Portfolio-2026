@@ -1,8 +1,12 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
-	import Navigation from '$lib/components/layout/Navigation.svelte';
+	import Header from '$lib/components/layout/Header.svelte'; // Ton nouveau composant
+	import NavigationMobile from '$lib/components/layout/NavigationMobile.svelte';
 	import '../styles/main.scss';
 	import { isMenuOpen } from '$lib/stores/main-store';
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+
+	injectSpeedInsights();
 </script>
 
 <svelte:head>
@@ -11,22 +15,41 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </svelte:head>
 
+<NavigationMobile />
+
+<Header />
+
 <main>
-	<Navigation />
 	<div class="main-contents" class:menu-open={$isMenuOpen}>
 		<slot />
 	</div>
 </main>
 
-<style>
-	.main-contents {
-		width: 100%;
-		height: 100vh;
-		transition: background-color 0.3s ease;
-		background-color: blue;
-		&.menu-open {
-			transition: all 0.3s ease;
-			transform: scale(0.7) translateX(40%);
+<style lang="scss">
+	main {
+		overflow: hidden;
+		background-color: rgb(97, 126, 97);
+
+		.main-contents {
+			position: relative;
+			z-index: 20;
+			width: 100%;
+			height: 100vh;
+			background-color: white;
+
+			transition:
+				transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+				border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+			&.menu-open {
+				transition:
+					transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+					border-radius 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+				transform: scale(0.8) translateX(60%);
+				border-radius: 45px;
+				box-shadow: -20px 0 50px rgba(0, 0, 0, 0.2);
+				pointer-events: none;
+			}
 		}
 	}
 </style>
