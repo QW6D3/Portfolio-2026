@@ -3,41 +3,41 @@
    ========================================================================== */
 
 :root {
-    /* Fonts */
-    --font-sans: 'Hind', sans-serif;
-    --font-title: 'Khand', sans-serif;
+	/* Fonts */
+	--font-sans: 'Hind', sans-serif;
+	--font-title: 'Khand', sans-serif;
 
-    /* Typographic scale (1.25) */
-    --font-size-xs: 0.8rem;
-    --font-size-sm: 1rem;
-    --font-size-md: 1.25rem;
-    --font-size-lg: 1.56rem;
-    --font-size-xl: 1.95rem;
-    --font-size-2xl: 2.44rem;
-    --font-size-3xl: 3.05rem;
-    --font-size-4xl: 3.81rem;
+	/* Typographic scale (1.25) */
+	--font-size-xs: 0.8rem;
+	--font-size-sm: 1rem;
+	--font-size-md: 1.25rem;
+	--font-size-lg: 1.56rem;
+	--font-size-xl: 1.95rem;
+	--font-size-2xl: 2.44rem;
+	--font-size-3xl: 3.05rem;
+	--font-size-4xl: 3.81rem;
 
-    /* Icons (Lucide) */
-    --icon-stroke: 1.5;
-    --icon-size: 20px;
-    --icon-opacity: 0.6;
+	/* Icons (Lucide) */
+	--icon-stroke: 1.5;
+	--icon-size: 20px;
+	--icon-opacity: 0.6;
 
-    /* Motion */
-    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-    --transition-speed: 0.6s;
+	/* Motion */
+	--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+	--transition-speed: 0.6s;
 
-    /* Interface colors */
-    --color-white: #ffffff;
-    --color-white-soft: rgba(255, 255, 255, 0.1);
-    --color-white-hover: rgba(255, 255, 255, 0.2);
-    --color-black: #000000;
+	/* Interface colors */
+	--color-white: #ffffff;
+	--color-white-soft: rgba(255, 255, 255, 0.1);
+	--color-white-hover: rgba(255, 255, 255, 0.2);
+	--color-black: #000000;
 }
 
 /* Overrides Lucide inline styles for global consistency */
 :global(.lucide) {
-    stroke-width: var(--icon-stroke) !important;
-    width: var(--icon-size) !important;
-    height: var(--icon-size) !important;
-    display: inline-block;
-    flex-shrink: 0; 
+	stroke-width: var(--icon-stroke) !important;
+	width: var(--icon-size) !important;
+	height: var(--icon-size) !important;
+	display: inline-block;
+	flex-shrink: 0;
 }

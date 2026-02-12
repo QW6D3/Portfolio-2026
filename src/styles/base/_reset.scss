@@ -9,10 +9,10 @@ html {
 	box-sizing: border-box;
 	font-size: 22px; /* 1rem = 18px */
 }
-*, 
-*::before, 
+*,
+*::before,
 *::after {
-    box-sizing: inherit;
-    margin: 0;
-    padding: 0;
+	box-sizing: inherit;
+	margin: 0;
+	padding: 0;
 }
