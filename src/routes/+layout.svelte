@@ -15,6 +15,9 @@
 </svelte:head>
 
 <main>
+	<!-- Page empilée en arrière-plan -->
+	<div class="page-stack" class:menu-open={$isMenuOpen}></div>
+
 	<div class="main-contents" class:menu-open={$isMenuOpen}>
 		<slot />
 	</div>
@@ -26,9 +29,36 @@
 
 	main {
 		overflow: hidden;
-		background-color: $bg-menu;
+		position: relative;
+		background-color: $color-bg-base;
 		height: 100vh;
 		width: 100vw;
+	}
+
+	.page-stack {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: #ffffff;
+		z-index: 2;
+		transform: scale(0.95) translateX(0);
+		border-radius: 0;
+		opacity: 0;
+		pointer-events: none;
+
+		transition:
+			transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
+			border-radius 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
+			opacity 0.4s ease;
+
+		&.menu-open {
+			opacity: 0.7;
+			transform: scale(0.7) translateX(60%);
+			border-radius: $inner-radius-target;
+			box-shadow: -8px 5px 20px rgba($color-accent-dark, 0.08);
+		}
 	}
 
 	.main-contents {
@@ -37,21 +67,18 @@
 		z-index: 2;
 		width: 100%;
 		height: 100%;
-		background-color: white;
+		background-color: #ffffff;
 		overflow-y: auto;
 
 		transition:
-			transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-			border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+			transform 0.55s cubic-bezier(0.34, 1.2, 0.64, 1),
+			border-radius 0.55s cubic-bezier(0.34, 1.2, 0.64, 1),
+			box-shadow 0.55s cubic-bezier(0.34, 1.2, 0.64, 1);
 
 		&.menu-open {
-			transition:
-				transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-				border-radius 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-
-			transform: scale(0.8) translateX(65%);
+			transform: scale(0.83) translateX(66%);
 			border-radius: $inner-radius-target;
-			box-shadow: -15px 0 30px rgba(0, 0, 0, 0.15);
+			box-shadow: -15px 10px 40px rgba($color-accent-dark, 0.15);
 			pointer-events: none;
 			user-select: none;
 		}

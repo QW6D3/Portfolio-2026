@@ -1,10 +1,19 @@
 // abstracts/_variables.scss
 
-// 1. Layout & Stack Effect (Les calculs dont on a parlé)
+// Layout Constants
 $page-padding: clamp(1rem, 5vw, 2rem);
 $inner-radius-target: 45px;
-$bg-menu: rgb(97, 126, 97);
 
-// 2. Tu peux aussi "lier" tes variables SCSS à tes variables CSS
-// pour les utiliser dans tes calculs complexes
+// Typography Base
 $font-size-base: 1rem;
+
+// Couleurs de base
+$color-bg-base: #F8FAFC; // Fond clair neutre
+
+// Palette principale
+$color-primary-light: #B3E0FF;   // Bleu clair innovant
+$color-secondary-light: #C8E6C9; // Vert menthe créatif
+$color-accent-light: #D1C4E9;    // Lavande ingénieuse
+$color-text-dark: #0F172A;       // Texte foncé (ton initial)
+$color-accent-dark: #5C6BC0;     // Indigo profond (accents)
+$color-neutral: #90A4AE;         // Gris-bleu professionnel

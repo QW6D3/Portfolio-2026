@@ -16,9 +16,6 @@
 				{#each navItems as item, i (item.name)}
 					<li style="--index: {i}">
 						<a href={resolve(item.path)} on:click={toggleMenu}>
-							<span class="icon-wrap">
-								<svelte:component this={item.icon} />
-							</span>
 							<span class="text-wrap">{item.name}</span>
 						</a>
 					</li>
@@ -39,9 +36,24 @@
 		position: fixed;
 		inset: 0;
 		z-index: 1;
-		background-color: $bg-menu;
 		visibility: hidden;
 		transition: visibility 0.4s;
+
+		// Background avec gradient linéaire sobre
+		background-color: $color-bg-base;
+		background-image: linear-gradient(
+			135deg,
+			rgba($color-primary-light, 0.8) 0%,
+			rgba($color-secondary-light, 0.6) 100%
+		);
+
+		&::before {
+			content: '';
+			position: absolute;
+			inset: 0;
+			background: linear-gradient(to bottom, rgba($color-accent-light, 0.05) 0%, transparent 100%);
+			pointer-events: none;
+		}
 
 		&.is-open {
 			visibility: visible;
@@ -49,12 +61,14 @@
 	}
 
 	.menu-wrapper {
+		box-sizing: border-box;
 		width: 60%;
 		height: 100%;
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
 		padding: calc(#{$page-padding} * 1.5);
+		position: relative;
 	}
 
 	.burger-close {
@@ -63,8 +77,8 @@
 		justify-content: center;
 		width: 44px;
 		height: 44px;
-		background: var(--color-white-soft);
-		color: var(--color-white);
+		background: $color-accent-dark;
+		color: $color-bg-base;
 		border: none;
 		border-radius: 12px;
 		cursor: pointer;
@@ -72,7 +86,6 @@
 
 		&:active {
 			transform: scale(0.92);
-			background-color: var(--color-white-hover);
 		}
 	}
 
@@ -80,7 +93,7 @@
 		flex-grow: 1;
 		display: flex;
 		margin-top: 3rem;
-		align-items: start; // Centers menu vertically between button and footer
+		align-items: start;
 
 		ul {
 			list-style: none;
@@ -96,28 +109,19 @@
 				a {
 					display: flex;
 					align-items: center;
+					width: 100%;
 					gap: 1.25rem;
+					padding-left: 0.25rem;
 					text-decoration: none;
-					color: var(--color-white);
+					color: $color-text-dark;
 					font-family: var(--font-title);
 					font-size: var(--font-size-md);
-					font-weight: 500;
-					letter-spacing: 0.05em;
+					font-weight: 700;
+					letter-spacing: 0.1em;
 					text-transform: uppercase;
 
-					/* Animation setup */
 					transform: translateY(110%);
 					transition: transform var(--transition-speed) var(--ease-out-expo);
-
-					.icon-wrap {
-						display: flex;
-						opacity: var(--icon-opacity);
-						transition: opacity 0.3s ease;
-					}
-
-					&:hover .icon-wrap {
-						opacity: 1;
-					}
 				}
 			}
 		}
@@ -129,14 +133,13 @@
 
 		p {
 			font-family: var(--font-sans);
-			font-size: var(--font-size-xs);
-			color: var(--color-white);
-			opacity: 0.4;
+			font-size: var(--font-size-xxs);
+			color: $color-text-dark;
+			opacity: 0.6;
 			margin: 0;
 		}
 	}
 
-	/* States when menu is active */
 	.is-open {
 		nav ul li a {
 			transform: translateY(0);
