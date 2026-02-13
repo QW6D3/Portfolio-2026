@@ -19,6 +19,9 @@
 	<div class="page-stack" class:menu-open={$isMenuOpen}></div>
 
 	<div class="main-contents" class:menu-open={$isMenuOpen}>
+		{#if $isMenuOpen}
+			<div class="scroll-overlay"></div>
+		{/if}
 		<slot />
 	</div>
 </main>
@@ -79,8 +82,13 @@
 			transform: scale(0.83) translateX(66%);
 			border-radius: $inner-radius-target;
 			box-shadow: -15px 10px 40px rgba($color-accent-dark, 0.15);
-			pointer-events: none;
 			user-select: none;
+		}
+		.scroll-overlay {
+			position: absolute;
+			inset: 0;
+			z-index: 999;
+			pointer-events: none;
 		}
 	}
 </style>
