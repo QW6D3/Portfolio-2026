@@ -39,19 +39,22 @@
 		visibility: hidden;
 		transition: visibility 0.4s;
 
-		// Background avec gradient linéaire sobre
-		background-color: $color-bg-base;
-		background-image: linear-gradient(
+		// Optimisation de rendu
+		contain: content;
+		transform: translateZ(0);
+
+		background: linear-gradient(
 			135deg,
-			rgba($color-primary-light, 0.8) 0%,
-			rgba($color-secondary-light, 0.6) 100%
+			rgba($color-primary-light, 0.85) 0%,
+			rgba($color-secondary-light, 0.65) 50%,
+			rgba($color-bg-base, 1) 100%
 		);
 
 		&::before {
 			content: '';
 			position: absolute;
 			inset: 0;
-			background: linear-gradient(to bottom, rgba($color-accent-light, 0.05) 0%, transparent 100%);
+			background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
 			pointer-events: none;
 		}
 
@@ -82,7 +85,9 @@
 		border: none;
 		border-radius: 12px;
 		cursor: pointer;
-		transition: all 0.3s var(--ease-out-expo);
+		transition:
+			transform 0.3s var(--ease-out-expo),
+			background-color 0.3s ease;
 
 		&:active {
 			transform: scale(0.92);
@@ -102,28 +107,29 @@
 			display: flex;
 			flex-direction: column;
 			gap: 2rem;
+		}
+	}
 
-			li {
-				overflow: hidden;
+	li {
+		overflow: hidden;
 
-				a {
-					display: flex;
-					align-items: center;
-					width: 100%;
-					gap: 1.25rem;
-					padding-left: 0.25rem;
-					text-decoration: none;
-					color: $color-text-dark;
-					font-family: var(--font-title);
-					font-size: var(--font-size-md);
-					font-weight: 700;
-					letter-spacing: 0.1em;
-					text-transform: uppercase;
+		a {
+			display: flex;
+			align-items: center;
+			width: 100%;
+			gap: 1.25rem;
+			padding-left: 0.25rem;
+			text-decoration: none;
+			color: $color-text-dark;
+			font-family: var(--font-title);
+			font-size: var(--font-size-md);
+			font-weight: 700;
+			letter-spacing: 0.1em;
+			text-transform: uppercase;
 
-					transform: translateY(110%);
-					transition: transform var(--transition-speed) var(--ease-out-expo);
-				}
-			}
+			will-change: transform;
+			transform: translateY(110%);
+			transition: transform var(--transition-speed) var(--ease-out-expo);
 		}
 	}
 
@@ -140,15 +146,14 @@
 		}
 	}
 
-	.is-open {
-		nav ul li a {
-			transform: translateY(0);
-			transition-delay: calc(var(--index) * 0.08s + 0.35s);
-		}
+	// Sélecteurs simplifiés pour un parsing CSS plus rapide
+	.is-open a {
+		transform: translateY(0);
+		transition-delay: calc(var(--index) * 0.08s + 0.35s);
+	}
 
-		footer {
-			opacity: 1;
-			transition-delay: 0.8s;
-		}
+	.is-open footer {
+		opacity: 1;
+		transition-delay: 0.8s;
 	}
 </style>

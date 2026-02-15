@@ -19,7 +19,8 @@
 		a {
 			text-decoration: none;
 			color: black;
-			font-weight: 500;
+			font-weight: 600;
+			letter-spacing: -0.01em;
 			&:hover {
 				color: rgb(97, 126, 97);
 			}

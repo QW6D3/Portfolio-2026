@@ -12,20 +12,34 @@
 	<link rel="icon" href={favicon} />
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link
+		rel="preload"
+		href="/fonts/Sharpie/Sharpie-Variable.woff2"
+		as="font"
+		type="font/woff2"
+		crossorigin="anonymous"
+	/>
+	<link
+		rel="preload"
+		href="/fonts/Ranade/Ranade-Variable.woff2"
+		as="font"
+		type="font/woff2"
+		crossorigin="anonymous"
+	/>
 </svelte:head>
 
 <main>
-	<!-- Page empilée en arrière-plan -->
-	<div class="page-stack" class:menu-open={$isMenuOpen}></div>
+	<div class="page-stack mobile-only" class:menu-open={$isMenuOpen}></div>
 
 	<div class="main-contents" class:menu-open={$isMenuOpen}>
-		{#if $isMenuOpen}
-			<div class="scroll-overlay"></div>
-		{/if}
+		<div class="scroll-overlay" class:active={$isMenuOpen}></div>
 		<slot />
 	</div>
 </main>
-<NavigationMobile />
+
+<div class="mobile-only">
+	<NavigationMobile />
+</div>
 
 <style lang="scss">
 	@use '../styles/abstracts/variables' as *;
@@ -34,23 +48,35 @@
 		overflow: hidden;
 		position: relative;
 		background-color: $color-bg-base;
-		height: 100vh;
-		width: 100vw;
+		height: 100dvh;
+		width: 100%;
 	}
 
-	.page-stack {
+	.mobile-only {
+		display: block;
+		@media (min-width: 768px) {
+			display: none;
+		}
+	}
+
+	.page-stack,
+	.main-contents {
 		position: absolute;
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background-color: #ffffff;
+		background-color: #ffffff; // Crucial pour éviter la transparence
+		will-change: transform;
+	}
+
+	.page-stack {
 		z-index: 2;
-		transform: scale(0.95) translateX(0);
-		border-radius: 0;
 		opacity: 0;
 		pointer-events: none;
+		transform: scale(1);
 
+		// On garde TES courbes exactes
 		transition:
 			transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
 			border-radius 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
@@ -65,13 +91,10 @@
 	}
 
 	.main-contents {
+		z-index: 3;
 		padding: $page-padding;
-		position: relative;
-		z-index: 2;
-		width: 100%;
-		height: 100%;
-		background-color: #ffffff;
 		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
 
 		transition:
 			transform 0.55s cubic-bezier(0.34, 1.2, 0.64, 1),
@@ -83,12 +106,23 @@
 			border-radius: $inner-radius-target;
 			box-shadow: -15px 10px 40px rgba($color-accent-dark, 0.15);
 			user-select: none;
-		}
-		.scroll-overlay {
-			position: absolute;
-			inset: 0;
-			z-index: 999;
 			pointer-events: none;
+			overflow: hidden;
+		}
+	}
+
+	.scroll-overlay {
+		position: absolute;
+		inset: 0;
+		z-index: 999;
+		background: transparent;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+
+		&.active {
+			opacity: 1;
+			pointer-events: auto;
 		}
 	}
 </style>
