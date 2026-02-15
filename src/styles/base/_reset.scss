@@ -3,59 +3,60 @@
    ========================================================================== */
 
 html {
-    box-sizing: border-box;
-    font-size: 22px; 
-    
-    // Empêche les sauts de layout et le scroll horizontal
-    overflow-x: hidden;
-    height: 100%;
-    margin: 0;
-    padding: 0;
+	box-sizing: border-box;
+	font-size: 22px;
+
+	// Empêche les sauts de layout et le scroll horizontal
+	overflow-x: hidden;
+	height: 100%;
+	margin: 0;
+	padding: 0;
 }
 
 body {
-    // Utilisation de 100% pour la stabilité du viewport mobile
-    min-height: 100%;
-    margin: 0;
-    padding: 0;
-    background-color: #ffffff; // Ou ta variable $color-bg-base
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    
-    // Suppression des barres de défilement fantômes (Couches #13/#14)
-    &::-webkit-scrollbar {
-        display: none;
-    }
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+	// Utilisation de 100% pour la stabilité du viewport mobile
+	min-height: 100%;
+	margin: 0;
+	padding: 0;
+	background-color: #ffffff; // Ou ta variable $color-bg-base
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+
+	// Suppression des barres de défilement fantômes (Couches #13/#14)
+	&::-webkit-scrollbar {
+		display: none;
+	}
+	scrollbar-width: none;
+	-ms-overflow-style: none;
 }
 
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    
-    // Désactive les transitions par défaut qui saturent le Main-thread
-    transition: none; 
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+
+	// Désactive les transitions par défaut qui saturent le Main-thread
+	transition: none;
 }
 
 /* ICONS GLOBAL CONFIG 
    Déplacé ici pour éviter la duplication dans les composants 
 */
 :global(.lucide) {
-    stroke-width: var(--icon-stroke) !important;
-    width: var(--icon-size) !important;
-    height: var(--icon-size) !important;
-    display: inline-block;
-    flex-shrink: 0;
-    vertical-align: middle;
+	stroke-width: var(--icon-stroke) !important;
+	width: var(--icon-size) !important;
+	height: var(--icon-size) !important;
+	display: inline-block;
+	flex-shrink: 0;
+	vertical-align: middle;
 }
 
 // Optionnel : s'assurer que les images ne cassent pas le layout
-img, svg {
-    max-width: 100%;
-    height: auto;
-    display: block;
+img,
+svg {
+	max-width: 100%;
+	height: auto;
+	display: block;
 }
