@@ -1,19 +1,27 @@
 // abstracts/_variables.scss
 
-// Layout Constants
-$page-padding: clamp(1rem, 5vw, 2rem);
+// Layout
+$page-padding: clamp(2rem, 5vw, 2rem);
 $inner-radius-target: 45px;
 
-// Typography Base
+// Typography
 $font-size-base: 1rem;
 
-// Couleurs de base
-$color-bg-base: #f8fafc; // Fond clair neutre
+// Palette de base (Light Mode)
+$color-bg-light: #f5f2ed; // Blanc cassé / Beige doux
+$color-text-light: #1a1a1b; // Noir encre
+$color-primary-light: #8783d1; // Soft Periwinkle
+$color-secondary-light: #aa9aba; // Lilac Ash
+$color-accent1-light: #bfa4a4; // Rosy Taupe
+$color-accent2-light: #d1abad; // Cotton Rose
 
-// Palette principale
-$color-primary-light: #b3e0ff; // Bleu clair innovant
-$color-secondary-light: #c8e6c9; // Vert menthe créatif
-$color-accent-light: #d1c4e9; // Lavande ingénieuse
-$color-text-dark: #0f172a; // Texte foncé (ton initial)
-$color-accent-dark: #5c6bc0; // Indigo profond (accents)
-$color-neutral: #90a4ae; // Gris-bleu professionnel
+// Palette de base (Dark Mode)
+$color-bg-dark: #313136; // Gris anthracite chaud
+$color-text-dark: #e0dcd6; // Blanc cassé / Os
+$color-primary-dark: #4b45a8; // Electric Indigo
+$color-secondary-dark: #725e87; // Muted Plum
+$color-accent1-dark: #8c6b6b; // Burnt Rose
+$color-accent2-dark: #a67477; // Dusty Coral
+
+// Divers
+$color-neutral: #90a4ae;

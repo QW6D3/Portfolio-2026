@@ -14,7 +14,7 @@
 		<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
 			<circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2" />
 		</svg>
-		<span class="sr-only">Portfolio</span>
+		<span class="sr-only">Charlie Charron</span>
 	</a>
 
 	<nav class="desktop-nav">
@@ -29,22 +29,21 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 1rem;
+		padding: 0 $page-padding $page-padding 0; // Utilisation de ta variable de padding
 		z-index: 30;
 		position: relative;
-		// On indique au navigateur que le header est indépendant
 		contain: layout style;
 
 		.logo {
 			display: flex;
 			align-items: center;
-			color: $color-text-dark;
+			// Utilisation de la variable CSS pour le changement de thème auto
+			color: var(--color-text);
 			text-decoration: none;
 
 			svg {
 				width: 40px;
 				height: 40px;
-				// Empêche les sauts de layout si le SVG charge lentement
 				aspect-ratio: 1 / 1;
 			}
 		}
@@ -53,38 +52,38 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			width: 44px;
-			height: 44px;
+			width: 60px;
+			height: 60px;
 			appearance: none;
-			background: #f5f5f5;
+			// Utilisation des variables du thème pour le bouton
+			background: var(--color-secondary);
+			color: var(--color-bg);
 			border: none;
 			border-radius: 12px;
 			cursor: pointer;
-			color: #333;
 
-			// OPTIMISATION : On cible uniquement transform et background
 			will-change: transform;
 			transition:
 				transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-				background-color 0.2s ease;
+				background-color 0.2s ease,
+				opacity 0.2s ease;
 
 			@media (min-width: 768px) {
 				display: none;
 			}
 
 			&:hover {
-				background-color: #eeeeee;
+				opacity: 0.9;
 			}
 
 			&:active {
 				transform: scale(0.92);
-				background-color: #e0e0e0;
 			}
 
 			:global(svg) {
 				width: 24px;
 				height: 24px;
-				stroke-width: 2px;
+				stroke-width: var(--icon-stroke); // Utilisation de ton token base
 			}
 		}
 
@@ -97,6 +96,7 @@
 		}
 	}
 
+	// Ta classe utilitaire pour cesser le texte du logo (accessibilité)
 	.sr-only {
 		position: absolute;
 		width: 1px;

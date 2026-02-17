@@ -38,28 +38,53 @@
 		z-index: 1;
 		visibility: hidden;
 		transition: visibility 0.4s;
-
-		// Optimisation de rendu
 		contain: content;
 		transform: translateZ(0);
 
+		// Configuration du gradient animé (Mode Clair)
 		background: linear-gradient(
-			135deg,
-			rgba($color-primary-light, 0.85) 0%,
-			rgba($color-secondary-light, 0.65) 50%,
-			rgba($color-bg-base, 1) 100%
+			45deg,
+			$color-primary-light,
+			$color-secondary-light,
+			$color-bg-light
 		);
+		background-size: 200% 200%;
+		animation: gradient-animation 8s ease infinite;
+
+		// Configuration du gradient animé (Mode Sombre)
+		@media (prefers-color-scheme: dark) {
+			background: linear-gradient(
+				45deg,
+				$color-primary-dark,
+				$color-secondary-dark,
+				$color-bg-dark
+			);
+			background-size: 200% 200%;
+		}
 
 		&::before {
 			content: '';
 			position: absolute;
 			inset: 0;
-			background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+			background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
 			pointer-events: none;
 		}
 
 		&.is-open {
 			visibility: visible;
+		}
+	}
+
+	// L'animation transposée
+	@keyframes gradient-animation {
+		0% {
+			background-position: 0% 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+		100% {
+			background-position: 0% 50%;
 		}
 	}
 
@@ -80,8 +105,8 @@
 		justify-content: center;
 		width: 44px;
 		height: 44px;
-		background: $color-accent-dark;
-		color: $color-bg-base;
+		background: var(--color-bg);
+		color: var(--color-secondary);
 		border: none;
 		border-radius: 12px;
 		cursor: pointer;
@@ -120,11 +145,11 @@
 			gap: 1.25rem;
 			padding-left: 0.25rem;
 			text-decoration: none;
-			color: $color-text-dark;
+			color: var(--color-bg);
 			font-family: var(--font-title);
 			font-size: var(--font-size-md);
-			font-weight: 700;
-			letter-spacing: 0.1em;
+			font-weight: 900;
+			letter-spacing: 0em;
 			text-transform: uppercase;
 
 			will-change: transform;
@@ -140,13 +165,12 @@
 		p {
 			font-family: var(--font-sans);
 			font-size: var(--font-size-xxs);
-			color: $color-text-dark;
+			color: var(--color-text);
 			opacity: 0.6;
 			margin: 0;
 		}
 	}
 
-	// Sélecteurs simplifiés pour un parsing CSS plus rapide
 	.is-open a {
 		transform: translateY(0);
 		transition-delay: calc(var(--index) * 0.08s + 0.35s);

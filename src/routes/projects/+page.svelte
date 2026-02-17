@@ -4,6 +4,6 @@
 
 <main class="contact-page">
 	<Header />
-	<h1>Projects Page</h1>
+	<h1>C'est moi Chourli</h1>
 	<p>This is the projects page of the portfolio.</p>
 </main>

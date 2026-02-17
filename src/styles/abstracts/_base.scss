@@ -1,35 +1,53 @@
 /* ==========================================================================
    DESIGN SYSTEM TOKENS (Variables uniquement)
    ========================================================================== */
-
+@use "variables" as *;
 :root {
-	/* Fonts */
-	--font-sans: 'Ranade', sans-serif;
-	--font-title: 'Sharpie', sans-serif;
+    /* Fonts */
+    --font-sans: 'Ranade', sans-serif;
+    --font-title: 'Sharpie', sans-serif;
 
-	/* Typographic scale (1.25) */
-	--font-size-xxs: 0.64rem;
-	--font-size-xs: 0.8rem;
-	--font-size-sm: 1rem;
-	--font-size-md: 1.25rem;
-	--font-size-lg: 1.56rem;
-	--font-size-xl: 1.95rem;
-	--font-size-2xl: 2.44rem;
-	--font-size-3xl: 3.05rem;
-	--font-size-4xl: 3.81rem;
+    /* Typographic scale (1.25) */
+    --font-size-xxs: 0.64rem;
+    --font-size-xs: 0.8rem;
+    --font-size-sm: 1rem;
+    --font-size-md: 1.25rem;
+    --font-size-lg: 1.56rem;
+    --font-size-xl: 1.95rem;
+    --font-size-2xl: 2.44rem;
+    --font-size-3xl: 3.05rem;
+    --font-size-4xl: 3.81rem;
 
-	/* Icons (Lucide) */
-	--icon-stroke: 1.5;
-	--icon-size: 20px;
-	--icon-opacity: 0.6;
+    /* Icons (Lucide) */
+    --icon-stroke: 1.5;
+    --icon-size: 20px;
+    --icon-opacity: 0.6;
 
-	/* Motion */
-	--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-	--transition-speed: 0.6s;
+    /* Motion */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-speed: 0.6s;
 
-	/* Interface colors */
-	--color-white: #ffffff;
-	--color-white-soft: rgba(255, 255, 255, 0.1);
-	--color-white-hover: rgba(255, 255, 255, 0.2);
-	--color-black: #000000;
+    /* Interface colors - Light Mode (Par défaut) */
+    --color-bg: #{$color-bg-light};        // Ton blanc cassé #f5f2ed
+    --color-text: #{$color-text-light};    // Ton noir encre #1a1a1b
+    --color-primary: #{$color-primary-light};
+    --color-secondary: #{$color-secondary-light};
+    --color-accent-1: #{$color-accent1-light};
+    --color-accent-2: #{$color-accent2-light};
+
+    /* Utilitaires */
+    --color-white: #ffffff;
+    --color-black: #000000;
+}
+
+/* Interface colors - Dark Mode */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-bg: #{$color-bg-dark};      // Ton gris anthracite #1e1e24
+        --color-text: #{$color-text-dark};  // Ton blanc os #e0dcd6
+        --color-primary: #{$color-primary-dark};
+        --color-secondary: #{$color-secondary-dark};
+        --color-accent-1: #{$color-accent1-dark};
+        --color-accent-2: #{$color-accent2-dark};
+    }
 }
