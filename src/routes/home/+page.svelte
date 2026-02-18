@@ -4,7 +4,9 @@
 
 <main class="home-page">
 	<div class="tag"></div>
-	<div class="hero-mask"></div>
+	<div class="hero-mask">
+		<div class="loader"></div>
+	</div>
 	<Header />
 	<div class="home-content">
 		<h1>Charlie</h1>
@@ -17,7 +19,7 @@
 	.home-page {
 		position: relative;
 		box-sizing: border-box;
-		height: 100vh;
+		height: 100%;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
@@ -27,7 +29,7 @@
 		$tag-height-mobile: 94px;
 		$tag-height-desktop: 64px;
 		$tag-width-mobile: 94px;
-		$tag-width-desktop: 485.05+88px;
+		$tag-width-desktop: 485.05+50px;
 		$raccord-size: 1.125rem;
 		$raccord-radius: 0.8rem;
 
@@ -38,7 +40,7 @@
 			background-color: var(--color-bg);
 			z-index: 3;
 			pointer-events: none;
-			transition: all 0.3s ease; // Transition douce lors du changement de taille
+			transition: all 0.3s ease;
 
 			// FORMAT MOBILE (Gauche)
 			left: 0;
@@ -73,29 +75,25 @@
 
 		@media (min-width: 768px) {
 			.tag {
-				// INVERSION POUR PC (Droite)
 				left: auto;
 				right: 0;
 				height: $tag-height-desktop;
 				width: $tag-width-desktop;
-				border-radius: 0 0 0 $radius; // Arrondi en bas à GAUCHE maintenant
+				border-radius: 0 0 0 $radius;
 
-				// Raccord Gauche (PC)
 				&::before {
 					right: auto;
 					left: -$raccord-size;
 					border-top-left-radius: 0; // Reset
 					border-top-right-radius: $raccord-radius;
-					box-shadow: 0.375rem -0.375rem var(--color-bg); // Ombre inversée
+					box-shadow: 0.375rem -0.375rem var(--color-bg);
 				}
-
-				// Raccord Bas (PC)
 				&::after {
 					left: auto;
 					right: 0;
 					border-top-left-radius: 0; // Reset
 					border-top-right-radius: $raccord-radius;
-					box-shadow: 0.375rem -0.375rem var(--color-bg); // Ombre inversée
+					box-shadow: 0.375rem -0.375rem var(--color-bg);
 				}
 			}
 		}
@@ -107,9 +105,43 @@
 			width: 100%;
 			height: 100%;
 			z-index: 2;
-			background-color: rgba(0, 0, 0, 0.151); // Ton gris transparent
+			background-color: transparent; // Ton gris transparent
 			pointer-events: none;
 			border-radius: $radius;
+			overflow: hidden;
+
+			.loader {
+				position: absolute;
+				z-index: 5;
+				top: 50%;
+				left: 50%;
+				// On définit une taille fixe carrée pour le début
+				width: 100px;
+				height: 100px;
+				background-color: var(--color-primary);
+				border-radius: 12px;
+
+				// On utilise forwards pour que le carré reste à 100% à la fin de l'anim
+				animation: rotation-expand 3s cubic-bezier(0.85, 0, 0.15, 1) forwards;
+			}
+
+			@keyframes rotation-expand {
+				0% {
+					// Petit carré qui commence sa rotation
+					transform: translate(-50%, -50%) rotateZ(0deg) scale(1);
+					border-radius: 12px;
+				}
+				70% {
+					// Il tourne en restant petit pour bien voir l'effet
+					transform: translate(-50%, -50%) rotateZ(280deg) scale(1.2);
+				}
+				100% {
+					// Il finit sa rotation et explose pour couvrir tout le masque
+					// Le scale(15) ou plus assure de couvrir même les grands écrans
+					transform: translate(-50%, -50%) rotateZ(360deg) scale(25);
+					border-radius: 0; // Il devient rectangulaire par la force des choses à la fin
+				}
+			}
 		}
 
 		.home-content {

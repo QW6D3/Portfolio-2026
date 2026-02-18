@@ -29,7 +29,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0 $page-padding $page-padding 0; // Utilisation de ta variable de padding
+		padding: 0 4px $page-padding 0; // Utilisation de ta variable de padding
 		z-index: 30;
 		position: relative;
 		contain: layout style;
