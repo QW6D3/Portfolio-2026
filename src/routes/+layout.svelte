@@ -8,7 +8,6 @@
 
 	injectSpeedInsights();
 
-	// Gestion dynamique du titre selon la page
 	$: pageTitle =
 		$page.url.pathname === '/'
 			? 'Portfolio'
@@ -99,6 +98,7 @@
 		height: 100%;
 		background-color: var(--color-bg);
 		will-change: transform;
+		overflow: hidden;
 	}
 
 	.page-stack {
