@@ -2,6 +2,10 @@
 	import Header from '$lib/components/layout/Header.svelte';
 	import { onMount } from 'svelte';
 
+	import { skills as skillsData, type Skill } from '$lib/data/about';
+
+	type SkillCounter = Record<string, number>;
+
 	let currentSection: number = 0;
 	const totalSections: number = 4;
 	let isAnimating: boolean = false;
@@ -51,7 +55,7 @@
 		const fromY = currentTransform.m42;
 		const toY = -(index * (sectionHeight + gap));
 
-		animateTranslate(fromY, toY, 950);
+		animateTranslate(fromY, toY, 1100);
 	}
 
 	function handleWheel(e: WheelEvent): void {
@@ -92,6 +96,25 @@
 			container.removeEventListener('touchend', handleTouchEnd);
 		};
 	});
+
+	function sortSkillsByCategory(skills: Skill[]) {
+		const NumberByCategory = skills.reduce((acc: SkillCounter, skill: (typeof skills)[number]) => {
+			const category = skill.group;
+			if (!acc[category]) {
+				acc[category] = 0;
+			}
+			acc[category]++;
+			return acc;
+		}, {});
+
+		const sortedCategories = Object.entries(NumberByCategory) as [string, number][];
+
+		return sortedCategories.sort((a, b) => b[1] - a[1]);
+	}
+
+	const sortedSkills = sortSkillsByCategory(skillsData);
+
+	console.log('Sorted Skills by Category:', sortedSkills);
 </script>
 
 <main class="about-page" bind:this={container}>
@@ -100,8 +123,9 @@
 			<Header />
 			<img src="" alt="" />
 			<div>
-				<img src="" alt="" />
-				<p>Salut moi c'est Charlie</p>
+				<img src="/images/man.webp" alt="" />
+				<div class="bubbles"></div>
+				<p>Salut j'utilise Whatsapp</p>
 			</div>
 		</section>
 		<section class="skills about-section"></section>
@@ -117,7 +141,7 @@
 		height: 100dvh;
 		width: 100%;
 		padding: 0;
-		overflow: visible; // ← les sections débordent visiblement
+		overflow: visible;
 	}
 
 	.sections-wrapper {
@@ -137,6 +161,8 @@
 		}
 
 		.hero-section {
+			display: flex;
+			flex-direction: column;
 		}
 		.skills {
 			background-color: red;
