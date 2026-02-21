@@ -2,7 +2,7 @@
 	import Header from '$lib/components/layout/Header.svelte';
 	import { onMount } from 'svelte';
 
-	import { skills as skillsData, type Skill } from '$lib/data/about';
+	import { categoriesInfo, skills as skillsData, type Skill } from '$lib/data/about';
 
 	type SkillCounter = Record<string, number>;
 
@@ -113,8 +113,6 @@
 	}
 
 	const sortedSkills = sortSkillsByCategory(skillsData);
-
-	console.log('Sorted Skills by Category:', sortedSkills);
 </script>
 
 <main class="about-page" bind:this={container}>
@@ -128,7 +126,43 @@
 				<p>Salut j'utilise Whatsapp</p>
 			</div>
 		</section>
-		<section class="skills about-section"></section>
+		<section class="skills about-section">
+			{#each sortedSkills as [category, count] (category)}
+				{@const noSubSkills = skillsData.filter(
+					(skill) => skill.group === category && !skill.subGroup
+				)}
+
+				<div
+					class="category"
+					style="background-color: {categoriesInfo[category as keyof typeof categoriesInfo].color}"
+				>
+					<h3>{category} - {count}</h3>
+
+					{#each ['Languages', 'Frameworks', 'Libraries', 'CI/CD'] as subGroup (subGroup)}
+						{@const groupedSkills = skillsData.filter(
+							(skill) => skill.group === category && skill.subGroup === subGroup
+						)}
+
+						{#if groupedSkills.length > 0}
+							<h4>{subGroup}</h4>
+							<ul class="sub-list">
+								{#each groupedSkills as skill (skill.name)}
+									<li>{skill.name}</li>
+								{/each}
+							</ul>
+						{/if}
+					{/each}
+
+					{#if noSubSkills.length > 0}
+						<ul class="simple-list">
+							{#each noSubSkills as skill (skill.name)}
+								<li>{skill.name}</li>
+							{/each}
+						</ul>
+					{/if}
+				</div>
+			{/each}
+		</section>
 		<section class="passions about-section"></section>
 		<section class="CTA-project about-section"></section>
 	</div>
@@ -165,7 +199,23 @@
 			flex-direction: column;
 		}
 		.skills {
-			background-color: red;
+			display: flex;
+			.category {
+				display: flex;
+				flex-direction: column;
+				flex: 0 0 100%;
+				border-radius: 20px;
+				height: 100%;
+				width: 100%;
+				ul {
+					li {
+						list-style: none;
+					}
+				}
+				h3 {
+					color: var(--color-bg);
+				}
+			}
 		}
 		.passions {
 			background-color: green;
