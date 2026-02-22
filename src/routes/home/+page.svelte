@@ -24,7 +24,6 @@
 		display: flex;
 		flex-direction: column;
 
-		// --- VARIABLES DE STRUCTURE ---
 		$radius: 16px;
 		$tag-height-mobile: 94px;
 		$tag-height-desktop: 64px;

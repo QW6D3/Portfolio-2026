@@ -7,12 +7,12 @@ export interface Skill {
 	yearOfExp?: number;
 }
 export const categoriesInfo = {
-	Frontend: { icon: '/icons/layout.svg', color: '#3b82f6' },
-	Backend: { icon: '/icons/database-server.svg', color: '#10b981' },
-	Database: { icon: '/icons/storage.svg', color: '#f59e0b' },
-	DevOps: { icon: '/icons/infinity.svg', color: '#ef4444' },
-	Tools: { icon: '/icons/tools.svg', color: '#6b7280' },
-	Design: { icon: '/icons/palette.svg', color: '#8b5cf6' }
+	Frontend: { icon: 'Wallpaper', color: '#3b82f6' },
+	Backend: { icon: 'ServerCog', color: '#10b981' },
+	Database: { icon: 'Database', color: '#f59e0b' },
+	DevOps: { icon: 'Container', color: '#ef4444' },
+	Tools: { icon: 'Wrench', color: '#6b7280' },
+	Design: { icon: 'Palette', color: '#8b5cf6' }
 };
 
 export const skills: Skill[] = [

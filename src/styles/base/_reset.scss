@@ -53,10 +53,8 @@ body {
 	vertical-align: middle;
 }
 
-// Optionnel : s'assurer que les images ne cassent pas le layout
 img,
 svg {
-	max-width: 100%;
 	height: auto;
 	display: block;
 }

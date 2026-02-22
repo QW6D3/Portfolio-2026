@@ -1,227 +1,124 @@
 <script lang="ts">
 	import Header from '$lib/components/layout/Header.svelte';
-	import { onMount } from 'svelte';
-
-	import { categoriesInfo, skills as skillsData, type Skill } from '$lib/data/about';
-
-	type SkillCounter = Record<string, number>;
-
-	let currentSection: number = 0;
-	const totalSections: number = 4;
-	let isAnimating: boolean = false;
-	let touchStartY: number = 0;
-	let container: HTMLElement;
-	let wrapper: HTMLElement;
-
-	function easeInOutExpo(t: number): number {
-		if (t === 0) return 0;
-		if (t === 1) return 1;
-		if (t < 0.5) return Math.pow(2, 20 * t - 10) / 2;
-		return (2 - Math.pow(2, -20 * t + 10)) / 2;
-	}
-
-	function animateTranslate(from: number, to: number, duration: number): void {
-		const start = performance.now();
-
-		function step(now: number): void {
-			const elapsed = now - start;
-			const progress = Math.min(elapsed / duration, 1);
-			const eased = easeInOutExpo(progress);
-			const current = from + (to - from) * eased;
-
-			wrapper.style.transform = `translateY(${current}px)`;
-
-			if (progress < 1) {
-				requestAnimationFrame(step);
-			} else {
-				isAnimating = false;
-			}
-		}
-
-		requestAnimationFrame(step);
-	}
-
-	function goToSection(index: number): void {
-		if (index < 0 || index >= totalSections || isAnimating) return;
-
-		isAnimating = true;
-		currentSection = index;
-
-		const sections = container.querySelectorAll<HTMLElement>('.about-section');
-		const sectionHeight = sections[0].getBoundingClientRect().height;
-		const gap: number = 44;
-
-		const currentTransform = new DOMMatrix(getComputedStyle(wrapper).transform);
-		const fromY = currentTransform.m42;
-		const toY = -(index * (sectionHeight + gap));
-
-		animateTranslate(fromY, toY, 1100);
-	}
-
-	function handleWheel(e: WheelEvent): void {
-		e.preventDefault();
-		if (e.deltaY > 0) goToSection(currentSection + 1);
-		else goToSection(currentSection - 1);
-	}
-
-	function handleTouchStart(e: TouchEvent): void {
-		touchStartY = e.touches[0].clientY;
-	}
-
-	function handleTouchMove(e: TouchEvent): void {
-		e.preventDefault();
-	}
-
-	function handleTouchEnd(e: TouchEvent): void {
-		const delta: number = touchStartY - e.changedTouches[0].clientY;
-		if (Math.abs(delta) < 30) return;
-		if (delta > 0) goToSection(currentSection + 1);
-		else goToSection(currentSection - 1);
-	}
-
-	onMount(() => {
-		const mainContents = document.querySelector<HTMLElement>('.main-contents');
-		if (mainContents) mainContents.style.overflowY = 'hidden';
-
-		container.addEventListener('wheel', handleWheel, { passive: false });
-		container.addEventListener('touchstart', handleTouchStart, { passive: true });
-		container.addEventListener('touchmove', handleTouchMove, { passive: false });
-		container.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-		return () => {
-			if (mainContents) mainContents.style.overflowY = '';
-			container.removeEventListener('wheel', handleWheel);
-			container.removeEventListener('touchstart', handleTouchStart);
-			container.removeEventListener('touchmove', handleTouchMove);
-			container.removeEventListener('touchend', handleTouchEnd);
-		};
-	});
-
-	function sortSkillsByCategory(skills: Skill[]) {
-		const NumberByCategory = skills.reduce((acc: SkillCounter, skill: (typeof skills)[number]) => {
-			const category = skill.group;
-			if (!acc[category]) {
-				acc[category] = 0;
-			}
-			acc[category]++;
-			return acc;
-		}, {});
-
-		const sortedCategories = Object.entries(NumberByCategory) as [string, number][];
-
-		return sortedCategories.sort((a, b) => b[1] - a[1]);
-	}
-
-	const sortedSkills = sortSkillsByCategory(skillsData);
+	import PixelBlast from '$lib/components/ui/PixelBlast.svelte';
 </script>
 
-<main class="about-page" bind:this={container}>
-	<div class="sections-wrapper" bind:this={wrapper}>
-		<section class="hero-section about-section">
-			<Header />
-			<img src="" alt="" />
-			<div>
-				<img src="/images/man.webp" alt="" />
-				<div class="bubbles"></div>
-				<p>Salut j'utilise Whatsapp</p>
+<main>
+	<Header />
+	<div class="about-container">
+		<section class="about-section hero">
+			<PixelBlast color="#B19EEF" pixelSize={3} patternDensity={1.5} variant="triangle" />
+			<div class="hero-content">
+				<h1>
+					<span class="line-top">UN PEU PLUS</span>
+					<span class="line-bottom">SUR MOI</span>
+				</h1>
+				<img
+					class="photo-profil"
+					src="/images/chourli-sansfond.png"
+					alt="Photo de Charlie Charron"
+				/>
 			</div>
 		</section>
-		<section class="skills about-section">
-			{#each sortedSkills as [category, count] (category)}
-				{@const noSubSkills = skillsData.filter(
-					(skill) => skill.group === category && !skill.subGroup
-				)}
 
-				<div
-					class="category"
-					style="background-color: {categoriesInfo[category as keyof typeof categoriesInfo].color}"
-				>
-					<h3>{category} - {count}</h3>
-
-					{#each ['Languages', 'Frameworks', 'Libraries', 'CI/CD'] as subGroup (subGroup)}
-						{@const groupedSkills = skillsData.filter(
-							(skill) => skill.group === category && skill.subGroup === subGroup
-						)}
-
-						{#if groupedSkills.length > 0}
-							<h4>{subGroup}</h4>
-							<ul class="sub-list">
-								{#each groupedSkills as skill (skill.name)}
-									<li>{skill.name}</li>
-								{/each}
-							</ul>
-						{/if}
-					{/each}
-
-					{#if noSubSkills.length > 0}
-						<ul class="simple-list">
-							{#each noSubSkills as skill (skill.name)}
-								<li>{skill.name}</li>
-							{/each}
-						</ul>
-					{/if}
-				</div>
-			{/each}
+		<section class="about-section next">
+			<h1>À propos de Charlie</h1>
 		</section>
-		<section class="passions about-section"></section>
-		<section class="CTA-project about-section"></section>
+		<section>
+			<h1>Test</h1>
+		</section>
 	</div>
 </main>
 
 <style lang="scss">
-	.about-page {
-		display: flex;
-		flex-direction: column;
-		height: 100dvh;
+	$pad: 44px;
+	$header-h: 88px;
+
+	main {
 		width: 100%;
-		padding: 0;
-		overflow: visible;
-	}
-
-	.sections-wrapper {
 		display: flex;
 		flex-direction: column;
-		gap: 44px;
-		will-change: transform;
-		transform: translateY(0);
 
-		.about-section {
-			height: calc(100dvh - 88px);
+		.about-container {
 			width: 100%;
-			flex-shrink: 0;
-			border-radius: 20px;
-			box-sizing: border-box;
-			position: relative;
-		}
-
-		.hero-section {
 			display: flex;
 			flex-direction: column;
-		}
-		.skills {
-			display: flex;
-			.category {
+			gap: $pad;
+
+			> section {
+				width: 100%;
+				flex-shrink: 0;
+				position: relative;
+				box-sizing: border-box;
+
+				height: calc(100dvh - #{$pad}* 2);
+
+				background: #fff;
 				display: flex;
 				flex-direction: column;
-				flex: 0 0 100%;
-				border-radius: 20px;
-				height: 100%;
-				width: 100%;
-				ul {
-					li {
-						list-style: none;
+				justify-content: center;
+				align-items: center;
+
+				&.hero {
+					/* EXCEPTIONS POUR LA HERO */
+					margin: 0 -#{$pad} 0 -#{$pad};
+					width: calc(100% + #{$pad * 2});
+
+					// On retire le header seulement ici
+					height: calc(100dvh - #{$header-h} - #{$pad});
+
+					padding: 0; // Pas de padding pour l'image collée
+					overflow: hidden;
+					background: transparent;
+
+					.hero-content {
+						flex: 1;
+						display: flex;
+						flex-direction: column;
+						justify-content: flex-end;
+						align-items: center;
+
+						h1 {
+							margin-bottom: -8vh;
+							z-index: 1;
+							line-height: 0.8;
+							.line-top {
+								font-size: 14vw;
+								display: block;
+							}
+							.line-bottom {
+								font-size: 20vw;
+								display: block;
+							}
+						}
+
+						.photo-profil {
+							width: 100%;
+							max-width: 120vw;
+							height: auto;
+							display: block;
+							z-index: 2;
+							filter: grayscale(90%) contrast(120%) brightness(90%);
+						}
 					}
 				}
-				h3 {
-					color: var(--color-bg);
+
+				// Styles communs pour les textes
+				h1 {
+					font-size: 12vw;
+					color: #333;
+					font-weight: 900;
+					text-align: center;
+				}
+
+				p {
+					font-size: 1.1rem;
+					line-height: 1.6;
+					color: #444;
+					text-align: center;
+					max-width: 600px;
 				}
 			}
-		}
-		.passions {
-			background-color: green;
-		}
-		.CTA-project {
-			background-color: yellow;
 		}
 	}
 </style>
