@@ -11,9 +11,7 @@
 	</button>
 
 	<a href={resolve('/')} class="logo">
-		<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-			<circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2" />
-		</svg>
+		<img src="/images/C.svg" alt="Logo de Charlie Charron" />
 		<span class="sr-only">Charlie Charron</span>
 	</a>
 
@@ -29,7 +27,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0 $page-padding $page-padding 0; // Utilisation de ta variable de padding
+		padding: 0 4px $page-padding 0; // Utilisation de ta variable de padding
 		z-index: 30;
 		position: relative;
 		contain: layout style;
@@ -41,9 +39,9 @@
 			color: var(--color-text);
 			text-decoration: none;
 
-			svg {
-				width: 40px;
-				height: 40px;
+			img {
+				width: 44px;
+				height: 44px;
 				aspect-ratio: 1 / 1;
 			}
 		}
@@ -52,8 +50,8 @@
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			width: 60px;
-			height: 60px;
+			width: 44px;
+			height: 44px;
 			appearance: none;
 			// Utilisation des variables du thème pour le bouton
 			background: var(--color-secondary);
@@ -81,8 +79,8 @@
 			}
 
 			:global(svg) {
-				width: 24px;
-				height: 24px;
+				width: 18px;
+				height: 18px;
 				stroke-width: var(--icon-stroke); // Utilisation de ton token base
 			}
 		}
