@@ -41,7 +41,7 @@
 				<div class="hero-image {visible ? 'animate' : ''}">
 					<img
 						class="photo-profil"
-						src="/images/chourli-sansfond.png"
+						src="/images/chourli-sansfond.webp"
 						alt="Photo de Charlie Charron"
 					/>
 				</div>
