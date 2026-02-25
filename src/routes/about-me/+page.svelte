@@ -202,6 +202,7 @@
 				flex-direction: column;
 				justify-content: flex-end;
 				align-items: center;
+				overflow: hidden;
 
 				.hero-image-wrap {
 					position: absolute;
@@ -233,6 +234,7 @@
 					.hero-text {
 						margin-bottom: 55vh;
 						h1 {
+							font-weight: 900;
 							line-height: 0.8;
 							text-align: center;
 							.line-top {
@@ -301,22 +303,23 @@
 				z-index: 10;
 				display: flex;
 				flex-direction: row;
-				justify-content: flex-end; // Pousse le contenu vers la droite
-				align-items: flex-start; // On aligne en haut pour gérer le margin-top
+				justify-content: flex-end;
+				align-items: flex-start;
 				height: 100%;
-				padding: 0 ($pad * 4); // Padding généreux sur les côtés
+				padding: 0 ($pad * 3);
 
 				.hero-text {
-					flex: 0 1 45%;
+					flex: 0 1 40%;
 					text-align: left;
 
-					// AJUSTEMENT HAUTEUR DU TEXTE
-					margin-top: 15vh; // Descend le texte par rapport au header
+					margin-bottom: 0;
+					margin-top: 30vh;
 
 					h1 {
+						text-align: start;
 						margin-bottom: 2rem;
 						.line-top {
-							font-size: 3.5vw;
+							font-size: 4.1vw;
 						}
 						.line-bottom {
 							font-size: 6vw;
@@ -328,26 +331,29 @@
 						flex-direction: column;
 						align-items: flex-start;
 						gap: 1.5rem;
+						.line-wrapper {
+							width: 100%;
+							p {
+								font-size: 1.1rem;
+								max-width: 450px;
+								color: #333;
+								line-height: 1.6;
+							}
 
-						p {
-							font-size: 1.1rem;
-							max-width: 450px;
-							color: #333;
-							line-height: 1.6;
-						}
+							.btn-test {
+								width: 100%;
+								padding: 14px 45px;
+								background: #333;
+								color: white;
+								border: none;
+								border-radius: 50px;
+								font-weight: 900;
+								cursor: pointer;
+								transition: transform 0.3s ease;
 
-						.btn-test {
-							padding: 14px 45px;
-							background: #333;
-							color: white;
-							border: none;
-							border-radius: 50px;
-							font-weight: 900;
-							cursor: pointer;
-							transition: transform 0.3s ease;
-
-							&:hover {
-								transform: scale(1.05);
+								&:hover {
+									transform: scale(1.05);
+								}
 							}
 						}
 					}
@@ -357,22 +363,28 @@
 	}
 
 	/* --- PC LARGE (1500px+) : Retour au format split --- */
-	@media (min-width: 1500px) {
+	@media (min-width: 1500px) and (orientation: landscape) {
 		main .about-container .hero {
+			flex-direction: row;
+
 			.hero-inner {
+				display: flex;
 				flex-direction: row-reverse;
 				justify-content: space-between;
-				align-items: stretch;
-				padding: 0 ($pad * 4);
+				align-items: center;
+				height: 100%;
+				padding: 0 ($pad * 6);
+				position: relative;
 
 				.hero-text {
-					flex: 0 1 40%;
-					height: 100%;
-					justify-content: center;
-					align-items: flex-start;
+					flex: 0 1 50%;
+					margin-top: 0;
 					text-align: left;
+					z-index: 10;
+
 					h1 {
 						text-align: left;
+						margin-bottom: 2rem;
 						.line-top {
 							font-size: 2.5vw;
 						}
@@ -380,26 +392,37 @@
 							font-size: 4vw;
 						}
 					}
+
 					.desktop-info {
 						align-items: flex-start;
 						p {
 							text-align: left;
 						}
+						.btn-test {
+							width: auto;
+						} // Le bouton reprend sa taille normale
 					}
 				}
 			}
 
 			.hero-image-wrap {
-				flex: 1 1 60%;
+				position: relative;
+				bottom: 0;
+				left: 0;
 				height: 100%;
-				justify-content: flex-start;
-				position: relative; // On sort du absolute pour le flux flex
-				bottom: auto;
+				display: flex;
+				z-index: 5;
+				transform: none; // Reset du transform parent
+				opacity: 1;
 			}
 
 			.photo-profil {
-				height: clamp(500px, 70vw, 130vh);
-				transform: translateY(25%);
+				position: absolute;
+				max-height: none;
+				height: clamp(500px, 90vw, 130vh);
+				width: auto;
+				object-fit: contain;
+				left: 15%;
 				object-position: bottom left;
 			}
 		}
