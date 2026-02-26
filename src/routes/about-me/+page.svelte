@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { categoriesInfo, skills } from '$lib/data/about';
 	import Header from '$lib/components/layout/Header.svelte';
 	import PixelBlast from '$lib/components/ui/PixelBlast.svelte';
 
@@ -41,8 +42,36 @@
 		const diff = touchStartY - touchEndY;
 		if (Math.abs(diff) > 50) {
 			if (diff > 0) goToSection(currentSection + 1);
-			else goToSection(currentSection - 1);
+			else if (diff < 0) goToSection(currentSection - 1);
 		}
+	}
+
+	/* -- Section Skills -- */
+	type CategoryKey = keyof typeof categoriesInfo;
+	const uniqueGroups: CategoryKey[] = Array.from(
+		new Set(skills.map((s) => s.group as CategoryKey))
+	);
+
+	function getGroupedSubSkills(groupName: string) {
+		const groupSkills = skills.filter((s) => s.group === groupName);
+
+		const hasSubGroups = groupSkills.some((s) => s.subGroup);
+
+		if (!hasSubGroups) {
+			return { hasSubGroups: false, list: groupSkills };
+		}
+
+		const grouped = groupSkills.reduce(
+			(acc, skill) => {
+				const key = skill.subGroup || 'Autres';
+				if (!acc[key]) acc[key] = [];
+				acc[key].push(skill);
+				return acc;
+			},
+			{} as Record<string, typeof skills>
+		);
+
+		return { hasSubGroups: true, groups: Object.entries(grouped) };
 	}
 </script>
 
@@ -96,9 +125,43 @@
 			</div>
 		</section>
 
-		<section class="content-section">
+		<section class="content-section skills">
 			<div class="card-content">
-				<h1>À propos de Charlie</h1>
+				<h1>Ce que je sais faire ...</h1>
+			</div>
+			<div class="bento-grid">
+				{#each uniqueGroups as group (group)}
+					{@const info = categoriesInfo[group]}
+					{@const subGroupData = getGroupedSubSkills(group)}
+					{@const cardClass = `card-${group.toLowerCase()}`}
+
+					<div class="bento-card {cardClass}" style="background-color: {info.color}">
+						<div class="header">
+							<h2 style="color: {info.color}; filter: brightness(0.6);">{group}</h2>
+						</div>
+
+						<div class="skill-list">
+							{#if subGroupData.hasSubGroups}
+								{#each subGroupData.groups as [subName, items] (subName)}
+									<div class="sub-group-container">
+										<span class="sub-group-title">{subName}</span>
+										<ul>
+											{#each items as skill (skill)}
+												<li>{skill.name}</li>
+											{/each}
+										</ul>
+									</div>
+								{/each}
+							{:else}
+								<ul>
+									{#each subGroupData.list as skill (skill)}
+										<li>{skill.name}</li>
+									{/each}
+								</ul>
+							{/if}
+						</div>
+					</div>
+				{/each}
 			</div>
 		</section>
 
@@ -133,7 +196,6 @@
 		}
 	}
 
-	/* --- ANIMATIONS --- */
 	.line-wrapper {
 		display: block;
 		overflow: hidden;
@@ -174,7 +236,6 @@
 		}
 	}
 
-	/* --- LAYOUT --- */
 	main {
 		width: 100dvw;
 		height: 100dvh;
@@ -195,7 +256,10 @@
 				box-sizing: border-box;
 			}
 
-			// --- HERO MOBILE ---
+			.content-section {
+				padding: $pad;
+			}
+
 			.hero {
 				background: transparent;
 				display: flex;
@@ -251,27 +315,184 @@
 				}
 			}
 
-			// --- SECTIONS 2 & 3 ---
-			.content-section {
-				padding: $pad;
-				.card-content {
+			.skills {
+				width: 100%;
+				height: 100dvh;
+				background-color: var(--color-text);
+				padding-top: calc($header-h * 1.5);
+				display: flex;
+				flex-direction: column;
+
+				h1 {
+					color: var(--color-bg);
+					font-weight: 900;
+					margin-bottom: 2rem;
+					font-size: clamp(2rem, 5vw, 3.5rem);
+				}
+
+				.bento-grid {
+					display: grid;
+					grid-template-columns: repeat(6, 1fr);
+					grid-template-rows: repeat(5, 1fr);
+					gap: calc($pad/2);
 					width: 100%;
 					height: 100%;
-					background: #fff;
-					display: flex;
-					justify-content: center;
-					align-items: center;
-					h1 {
-						font-size: 10vw;
-						font-weight: 900;
-						color: #333;
+
+					.bento-card {
+						border-radius: 20px;
+						padding: 1.4rem;
+						display: flex;
+						flex-direction: column;
+						gap: 0.8rem;
+						overflow: hidden;
+						transition: all 0.35s cubic-bezier(0.2, 1, 0.3, 1);
+
+						&:hover {
+							transform: translateY(-2px);
+							filter: brightness(1.15);
+						}
+
+						&.card-frontend {
+							grid-column: span 3 / span 3;
+							grid-row: span 2 / span 2;
+						}
+						&.card-backend {
+							grid-column: span 2 / span 2;
+							grid-row: span 2 / span 2;
+							grid-column-start: 4;
+							grid-row-start: 1;
+						}
+						&.card-database {
+							grid-column: span 2 / span 2;
+							grid-row: span 3 / span 3;
+							grid-column-start: 1;
+							grid-row-start: 3;
+						}
+						&.card-devops {
+							grid-column: span 3 / span 3;
+							grid-row: span 3 / span 3;
+							grid-column-start: 3;
+							grid-row-start: 3;
+						}
+						&.card-tools {
+							grid-row: span 3 / span 3;
+							grid-column-start: 6;
+							grid-row-start: 1;
+						}
+						&.card-design {
+							grid-row: span 2 / span 2;
+							grid-column-start: 6;
+							grid-row-start: 4;
+						}
+
+						.header h2 {
+							font-size: 1.5rem;
+							font-weight: 700;
+							letter-spacing: -0.02em;
+							text-transform: uppercase;
+							margin: 0;
+							color: var(--color-bg);
+						}
+
+						.skill-list {
+							display: flex;
+							flex-direction: column;
+							gap: 0.5rem;
+							flex: 1;
+
+							.sub-group-title {
+								font-size: 0.58rem;
+								letter-spacing: 0.1em;
+								text-transform: uppercase;
+								display: block;
+								color: var(--color-bg);
+							}
+
+							ul {
+								list-style: none;
+								padding: 0;
+								margin: 0;
+								display: flex;
+								flex-wrap: wrap;
+								gap: 0.4rem;
+
+								li {
+									font-weight: 600;
+									font-size: 0.85rem;
+									color: rgba(255, 255, 255, 0.9);
+									border-radius: 8px;
+									padding: 0.25rem 0.65rem;
+									white-space: nowrap;
+									border: 1px solid rgba(255, 255, 255, 0.15);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// ── Tablette ──
+			@media (max-width: 1024px) {
+				.skills {
+					height: auto;
+					min-height: 100dvh;
+
+					.bento-grid {
+						grid-template-columns: repeat(4, 1fr);
+						grid-template-rows: auto;
+						height: auto;
+
+						.bento-card {
+							// Reset tous les placements fixes
+							grid-column: unset !important;
+							grid-row: unset !important;
+							grid-column-start: unset !important;
+							grid-row-start: unset !important;
+							min-height: 180px;
+
+							&.card-frontend {
+								grid-column: span 4 !important;
+							}
+							&.card-backend {
+								grid-column: span 2 !important;
+							}
+							&.card-database {
+								grid-column: span 2 !important;
+							}
+							&.card-devops {
+								grid-column: span 2 !important;
+							}
+							&.card-tools {
+								grid-column: span 1 !important;
+							}
+							&.card-design {
+								grid-column: span 1 !important;
+							}
+						}
+					}
+				}
+			}
+
+			// ── Mobile ──
+			@media (max-width: 600px) {
+				.skills {
+					.bento-grid {
+						grid-template-columns: 1fr;
+						height: auto;
+
+						.bento-card {
+							grid-column: unset !important;
+							grid-row: unset !important;
+							grid-column-start: unset !important;
+							grid-row-start: unset !important;
+							min-height: 160px;
+						}
 					}
 				}
 			}
 		}
 	}
 
-	/* --- DESKTOP (1024px+) --- */
 	@media (min-width: 1024px) and (orientation: landscape) {
 		main .about-container .hero {
 			overflow: hidden;
@@ -280,22 +501,21 @@
 				position: absolute;
 				bottom: 0;
 				left: 0;
-				width: 50%; // On réserve la moitié gauche
+				width: 50%;
 				height: 100%;
 				display: flex;
 				justify-content: flex-start;
 				align-items: flex-end;
 				z-index: 1;
-				// On peut retirer le transform ici si l'image est bien cadrée
 			}
 
 			.photo-profil {
 				width: clamp(700px, 75vw, 1500px);
 				height: auto;
-				max-height: 110vh; // Évite que l'image ne dépasse trop en hauteur
-				object-fit: contain; // On utilise contain pour garder le ratio sans couper la tête
+				max-height: 110vh;
+				object-fit: contain;
 				object-position: bottom left;
-				transform: translateY(25%); // Ajustement fin selon ta photo
+				transform: translateY(25%);
 			}
 
 			.hero-inner {
@@ -362,7 +582,6 @@
 		}
 	}
 
-	/* --- PC LARGE (1500px+) : Retour au format split --- */
 	@media (min-width: 1500px) and (orientation: landscape) {
 		main .about-container .hero {
 			flex-direction: row;
@@ -400,7 +619,7 @@
 						}
 						.btn-test {
 							width: auto;
-						} // Le bouton reprend sa taille normale
+						}
 					}
 				}
 			}
@@ -412,7 +631,7 @@
 				height: 100%;
 				display: flex;
 				z-index: 5;
-				transform: none; // Reset du transform parent
+				transform: none;
 				opacity: 1;
 			}
 
@@ -428,7 +647,6 @@
 		}
 	}
 
-	/* --- LANDSCAPE TABLET --- */
 	@media (orientation: landscape) and (max-height: 1024px) and (max-width: 1023px) {
 		main .about-container .hero {
 			.hero-inner .hero-text h1 {
