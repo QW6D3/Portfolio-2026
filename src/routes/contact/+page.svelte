@@ -1,8 +1,9 @@
 <script lang="ts">
 	import Header from '$lib/components/layout/Header.svelte';
+	import Grainient from '$lib/components/ui/Grainient.svelte';
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 
-	// --- Types ---
 	type FormStatus = 'idle' | 'loading' | 'success' | 'error';
 	type SubjectKey = 'opportunity' | 'freelance' | 'collaboration' | 'school' | 'other';
 
@@ -24,7 +25,11 @@
 		consent?: string;
 	}
 
-	// --- State ---
+	interface SubjectEntry {
+		key: SubjectKey;
+		label: string;
+	}
+
 	let formData: FormData = {
 		firstName: '',
 		lastName: '',
@@ -42,13 +47,18 @@
 	let formStartTime: number;
 	let isVisible = false;
 
-	const subjects: Record<SubjectKey, string> = {
-		opportunity: 'Opportunité de poste',
-		freelance: 'Mission freelance',
-		collaboration: 'Collaboration de projet',
-		school: 'Candidature école',
-		other: 'Autre'
-	};
+	const subjectEntries: SubjectEntry[] = [
+		{ key: 'opportunity', label: 'Opportunité de poste' },
+		{ key: 'freelance', label: 'Mission freelance' },
+		{ key: 'collaboration', label: 'Collaboration de projet' },
+		{ key: 'school', label: 'Candidature école' },
+		{ key: 'other', label: 'Autre' }
+	];
+
+	function handleSubjectChange(e: Event) {
+		formData.subject = (e.target as HTMLSelectElement).value as SubjectKey;
+		clearError('subject');
+	}
 
 	onMount(() => {
 		formStartTime = Date.now();
@@ -155,14 +165,26 @@
 	<Header />
 
 	<div class="layout">
-		<!-- LEFT — image + bookmark overlay -->
 		<aside class="left-panel" aria-hidden="true">
-			<img
-				src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=900&auto=format&fit=crop"
-				alt=""
-				class="bg-image"
-			/>
-			<div class="overlay"></div>
+			{#if browser}
+				<Grainient
+					color1="#c8b8ff"
+					color2="#1a1060"
+					color3="#0d0d0d"
+					timeSpeed={0.18}
+					warpStrength={1.2}
+					warpFrequency={4.5}
+					warpSpeed={1.8}
+					warpAmplitude={55.0}
+					grainAmount={0.08}
+					grainScale={2.5}
+					contrast={1.4}
+					saturation={0.95}
+					zoom={0.85}
+					blendAngle={-15.0}
+					rotationAmount={420.0}
+				/>
+			{/if}
 
 			<div class="bookmark">
 				<span class="bm-eyebrow">Travaillons ensemble</span>
@@ -211,7 +233,6 @@
 			</div>
 		</aside>
 
-		<!-- RIGHT — form -->
 		<main class="right-panel" aria-label="Formulaire de contact">
 			{#if status === 'success'}
 				<div class="feedback success" role="status" aria-live="polite">
@@ -237,27 +258,29 @@
 						<p>Les champs <abbr title="obligatoires">*</abbr> sont requis.</p>
 					</div>
 
-					<!-- Mobile only — infos -->
 					<div class="mobile-info">
-						<a href="mailto:charlie.charron.pro@gmail.com" class="mobile-link"
-							>charlie.charron.pro@gmail.com</a
-						>
+						<a href="mailto:charlie.charron.pro@gmail.com" class="mobile-link">
+							charlie.charron.pro@gmail.com
+						</a>
 						<a
 							href="https://github.com/QW6D3"
 							target="_blank"
 							rel="noopener noreferrer"
-							class="mobile-link">GitHub ↗</a
+							class="mobile-link"
 						>
+							GitHub ↗
+						</a>
 						<a
 							href="https://www.linkedin.com/in/charlie-charron"
 							target="_blank"
 							rel="noopener noreferrer"
-							class="mobile-link">LinkedIn ↗</a
+							class="mobile-link"
 						>
+							LinkedIn ↗
+						</a>
 					</div>
 
 					<form on:submit|preventDefault={handleSubmit} novalidate>
-						<!-- Honeypot anti-spam -->
 						<div class="hp-field" aria-hidden="true">
 							<input
 								type="text"
@@ -332,15 +355,15 @@
 							<div class="select-wrapper">
 								<select
 									id="subject"
-									bind:value={formData.subject}
-									on:change={() => clearError('subject')}
+									value={formData.subject}
+									on:change={handleSubjectChange}
 									aria-required="true"
 									aria-invalid={!!errors.subject}
 									aria-describedby={errors.subject ? 'err-subject' : undefined}
 								>
 									<option value="" disabled selected>Sélectionnez un sujet</option>
-									{#each Object.entries(subjects) as [key, label] (key)}
-										<option value={key}>{label}</option>
+									{#each subjectEntries as entry (entry.key)}
+										<option value={entry.key}>{entry.label}</option>
 									{/each}
 								</select>
 								<span class="select-arrow" aria-hidden="true">↓</span>
@@ -421,7 +444,6 @@
 <style lang="scss">
 	@use 'sass:color';
 
-	// ── Tokens ────────────────────────────────────────────────
 	$bg: #f4f3ef;
 	$surface: #ffffff;
 	$ink: #1c1c1a;
@@ -432,9 +454,8 @@
 	$radius-sm: 7px;
 	$ease: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
-	// ── Shell ─────────────────────────────────────────────────
 	.page-shell {
-		height: calc(100dvh - 88px);
+		height: 100dvh;
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
@@ -442,60 +463,35 @@
 		color: $ink;
 		opacity: 0;
 		transition: opacity 400ms ease;
-
 		&.visible {
 			opacity: 1;
 		}
 	}
 
-	// ── Two-column layout ─────────────────────────────────────
 	.layout {
 		flex: 1;
 		display: flex;
 		min-height: 0;
 	}
 
-	// ── Left panel ────────────────────────────────────────────
 	.left-panel {
 		position: relative;
 		flex: 0 0 44%;
 		overflow: hidden;
-		border-radius: 22px;
 		@media (max-width: 860px) {
 			display: none;
 		}
 	}
 
-	.bg-image {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		object-position: center;
-	}
-
-	.overlay {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(
-			155deg,
-			rgba(8, 8, 6, 0.6) 0%,
-			rgba(8, 8, 6, 0.28) 55%,
-			rgba(8, 8, 6, 0.52) 100%
-		);
-	}
-
-	// ── Bookmark ──────────────────────────────────────────────
 	.bookmark {
 		position: absolute;
 		top: 32px;
 		left: 28px;
 		width: min(300px, calc(100% - 56px));
-		background: rgba(255, 255, 255, 0.09);
-		backdrop-filter: blur(20px) saturate(1.5);
-		-webkit-backdrop-filter: blur(20px) saturate(1.5);
-		border: 1px solid rgba(255, 255, 255, 0.16);
+		background: rgba(8, 6, 20, 0.45);
+		backdrop-filter: blur(22px) saturate(1.6);
+		-webkit-backdrop-filter: blur(22px) saturate(1.6);
+		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 12px;
 		padding: 26px 24px 22px;
 		color: #fff;
@@ -517,7 +513,6 @@
 		line-height: 1.15;
 		margin: 0 0 10px;
 		color: #fff;
-
 		em {
 			font-style: italic;
 			font-weight: 400;
@@ -540,14 +535,12 @@
 		display: flex;
 		flex-direction: column;
 		gap: 9px;
-
 		li {
 			display: flex;
 			justify-content: space-between;
 			align-items: baseline;
 			gap: 10px;
 		}
-
 		.info-label {
 			font-size: 0.64rem;
 			text-transform: uppercase;
@@ -556,7 +549,6 @@
 			white-space: nowrap;
 			flex-shrink: 0;
 		}
-
 		.info-value {
 			font-size: 0.78rem;
 			color: rgba(255, 255, 255, 0.85);
@@ -577,11 +569,9 @@
 		color: rgba(255, 255, 255, 0.62);
 		text-decoration: none;
 		transition: color $ease;
-
 		&:hover {
 			color: #fff;
 		}
-
 		&:focus-visible {
 			outline: 2px solid rgba(255, 255, 255, 0.55);
 			outline-offset: 3px;
@@ -589,7 +579,6 @@
 		}
 	}
 
-	// ── Right panel ───────────────────────────────────────────
 	.right-panel {
 		flex: 1;
 		display: flex;
@@ -597,7 +586,6 @@
 		justify-content: center;
 		padding: 40px 48px;
 		overflow-y: auto;
-
 		@media (max-width: 1024px) {
 			padding: 32px 32px;
 		}
@@ -607,7 +595,6 @@
 		}
 	}
 
-	// ── Form container ────────────────────────────────────────
 	.form-container {
 		width: 100%;
 		max-width: 420px;
@@ -615,7 +602,6 @@
 
 	.form-header {
 		margin-bottom: 24px;
-
 		h2 {
 			font-size: clamp(1.25rem, 2vw, 1.6rem);
 			font-weight: 700;
@@ -623,12 +609,10 @@
 			color: $ink;
 			line-height: 1.2;
 		}
-
 		p {
 			font-size: 0.75rem;
 			color: $muted;
 			margin: 0;
-
 			abbr {
 				text-decoration: none;
 				color: $error;
@@ -637,14 +621,12 @@
 		}
 	}
 
-	// ── Mobile info strip ─────────────────────────────────────
 	.mobile-info {
 		display: none;
 		gap: 16px;
 		margin-bottom: 24px;
 		padding-bottom: 20px;
 		border-bottom: 1px solid $border;
-
 		@media (max-width: 860px) {
 			display: flex;
 			flex-wrap: wrap;
@@ -660,14 +642,12 @@
 		transition:
 			color $ease,
 			border-color $ease;
-
 		&:hover {
 			color: $ink;
 			border-color: $ink;
 		}
 	}
 
-	// ── Honeypot ──────────────────────────────────────────────
 	.hp-field {
 		position: absolute;
 		width: 1px;
@@ -677,12 +657,10 @@
 		white-space: nowrap;
 	}
 
-	// ── Fields ────────────────────────────────────────────────
 	.field-row {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 14px;
-
 		@media (max-width: 400px) {
 			grid-template-columns: 1fr;
 		}
@@ -716,15 +694,12 @@
 			transition:
 				border-color $ease,
 				box-shadow $ease;
-
 			&::placeholder {
 				color: color.adjust($muted, $lightness: 20%);
 			}
-
 			&:hover {
 				border-color: color.adjust($border, $lightness: -10%);
 			}
-
 			&:focus {
 				border-color: $ink;
 				box-shadow: 0 0 0 3px rgba(28, 28, 26, 0.07);
@@ -743,7 +718,6 @@
 			textarea {
 				border-color: $error;
 				background: color.adjust($error, $lightness: 50%);
-
 				&:focus {
 					box-shadow: 0 0 0 3px rgba($error, 0.1);
 				}
@@ -758,7 +732,6 @@
 		display: flex;
 		align-items: center;
 		gap: 4px;
-
 		&::before {
 			content: '!';
 			display: inline-flex;
@@ -775,15 +748,12 @@
 		}
 	}
 
-	// ── Select ────────────────────────────────────────────────
 	.select-wrapper {
 		position: relative;
-
 		select {
 			cursor: pointer;
 			padding-right: 34px;
 		}
-
 		.select-arrow {
 			position: absolute;
 			right: 12px;
@@ -795,7 +765,6 @@
 		}
 	}
 
-	// ── Textarea footer ───────────────────────────────────────
 	.textarea-footer {
 		display: flex;
 		justify-content: space-between;
@@ -807,14 +776,12 @@
 		color: $muted;
 		margin-left: auto;
 		flex-shrink: 0;
-
 		&.near-limit {
 			color: color.adjust(#e67e22, $lightness: -10%);
 			font-weight: 500;
 		}
 	}
 
-	// ── Consent ───────────────────────────────────────────────
 	.consent-field {
 		margin-top: 2px;
 	}
@@ -833,16 +800,13 @@
 			opacity: 0;
 			width: 0;
 			height: 0;
-
 			&:checked + .checkmark {
 				background: $ink;
 				border-color: $ink;
-
 				&::after {
 					display: block;
 				}
 			}
-
 			&:focus-visible + .checkmark {
 				box-shadow: 0 0 0 3px rgba(28, 28, 26, 0.18);
 			}
@@ -860,7 +824,6 @@
 			transition:
 				background $ease,
 				border-color $ease;
-
 			&::after {
 				content: '';
 				display: none;
@@ -877,7 +840,6 @@
 		}
 	}
 
-	// ── Submit ────────────────────────────────────────────────
 	.form-actions {
 		margin-top: 20px;
 	}
@@ -899,21 +861,17 @@
 			background $ease,
 			transform $ease,
 			box-shadow $ease;
-
 		.btn-arrow {
 			transition: transform $ease;
 		}
-
 		&:hover:not(:disabled) {
 			background: color.adjust($ink, $lightness: 12%);
 			box-shadow: 0 5px 18px rgba(0, 0, 0, 0.15);
 			transform: translateY(-1px);
-
 			.btn-arrow {
 				transform: translateX(4px);
 			}
 		}
-
 		&:active:not(:disabled) {
 			transform: translateY(0);
 		}
@@ -921,7 +879,6 @@
 			opacity: 0.6;
 			cursor: not-allowed;
 		}
-
 		&:focus-visible {
 			outline: 2px solid $ink;
 			outline-offset: 4px;
@@ -944,7 +901,6 @@
 		}
 	}
 
-	// ── Feedback ──────────────────────────────────────────────
 	.feedback {
 		width: 100%;
 		max-width: 420px;
@@ -966,25 +922,21 @@
 			font-weight: 700;
 			margin-bottom: 4px;
 		}
-
 		h2 {
 			font-size: 1.35rem;
 			font-weight: 700;
 			margin: 0;
 		}
-
 		p {
 			font-size: 0.85rem;
 			color: $muted;
 			line-height: 1.6;
 			margin: 0;
-
 			a {
 				color: $ink;
 				font-weight: 500;
 			}
 		}
-
 		&.success .feedback-icon {
 			background: color.adjust($success, $lightness: 50%);
 			color: $success;
@@ -993,7 +945,6 @@
 		&.success h2 {
 			color: $success;
 		}
-
 		&.error .feedback-icon {
 			background: color.adjust($error, $lightness: 40%);
 			color: $error;
@@ -1016,7 +967,6 @@
 			border-color $ease,
 			background $ease;
 		margin-top: 4px;
-
 		&:hover {
 			border-color: $ink;
 			background: $bg;
