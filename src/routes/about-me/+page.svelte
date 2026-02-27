@@ -11,8 +11,24 @@
 
 	onMount(() => {
 		visible = true;
+
+		const mainContent = document.querySelector('.main-contents') as HTMLElement;
+
+		const originalPadding = mainContent?.style.padding;
+
+		if (mainContent) {
+			mainContent.style.setProperty('padding', '0', 'important');
+			mainContent.style.setProperty('overflow-y', 'hidden', 'important');
+		}
 		document.body.style.overflow = 'hidden';
-		return () => (document.body.style.overflow = 'auto');
+		return () => {
+			if (mainContent) {
+				mainContent.style.padding = originalPadding || '';
+				mainContent.style.overflowY = 'auto';
+			}
+			document.body.style.overflow = 'auto';
+			visible = false;
+		};
 	});
 
 	function goToSection(index: number) {
@@ -24,9 +40,9 @@
 			}, 800);
 		}
 	}
-
 	function handleWheel(event: WheelEvent) {
-		if (isScrolling) return;
+		if (!visible || isScrolling) return;
+
 		if (event.deltaY > 0) goToSection(currentSection + 1);
 		else if (event.deltaY < 0) goToSection(currentSection - 1);
 	}
@@ -178,11 +194,6 @@
 	$header-h: 88px;
 	$transition-main: 0.8s cubic-bezier(0.65, 0, 0.35, 1);
 
-	:global(.main-contents) {
-		overflow-y: hidden !important;
-		padding: 0 !important;
-	}
-
 	.fixed-header {
 		position: fixed;
 		top: 0;
@@ -322,6 +333,7 @@
 				padding-top: calc($header-h * 1.5);
 				display: flex;
 				flex-direction: column;
+				overflow: hidden;
 
 				h1 {
 					color: var(--color-bg);
@@ -329,7 +341,6 @@
 					margin-bottom: 2rem;
 					font-size: clamp(2rem, 5vw, 3.5rem);
 				}
-
 				.bento-grid {
 					display: grid;
 					grid-template-columns: repeat(6, 1fr);
@@ -443,7 +454,6 @@
 						height: auto;
 
 						.bento-card {
-							// Reset tous les placements fixes
 							grid-column: unset !important;
 							grid-row: unset !important;
 							grid-column-start: unset !important;
@@ -451,7 +461,7 @@
 							min-height: 180px;
 
 							&.card-frontend {
-								grid-column: span 4 !important;
+								grid-column: span 3 !important;
 							}
 							&.card-backend {
 								grid-column: span 2 !important;
