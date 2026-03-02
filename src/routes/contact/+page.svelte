@@ -1,13 +1,14 @@
 <script lang="ts">
 	import Header from '$lib/components/layout/Header.svelte';
 	import Grainient from '$lib/components/ui/Grainient.svelte';
+	import { MessageCircleMore, Send, X } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 
-	type FormStatus = 'idle' | 'loading' | 'success' | 'error';
+	type Status = 'idle' | 'loading' | 'success' | 'error';
 	type SubjectKey = 'opportunity' | 'freelance' | 'collaboration' | 'school' | 'other';
 
-	interface FormData {
+	interface Fields {
 		firstName: string;
 		lastName: string;
 		email: string;
@@ -16,38 +17,10 @@
 		consent: boolean;
 	}
 
-	interface FormErrors {
-		firstName?: string;
-		lastName?: string;
-		email?: string;
-		subject?: string;
-		message?: string;
-		consent?: string;
-	}
+	type Errors = Partial<Record<keyof Fields, boolean>>;
+	type Shaking = Partial<Record<keyof Fields, boolean>>;
 
-	interface SubjectEntry {
-		key: SubjectKey;
-		label: string;
-	}
-
-	let formData: FormData = {
-		firstName: '',
-		lastName: '',
-		email: '',
-		subject: '',
-		message: '',
-		consent: false
-	};
-
-	let errors: FormErrors = {};
-	let status: FormStatus = 'idle';
-	let charCount = 0;
-	const MAX_CHARS = 1000;
-	let honeypot = '';
-	let formStartTime: number;
-	let isVisible = false;
-
-	const subjectEntries: SubjectEntry[] = [
+	const subjects: { key: SubjectKey; label: string }[] = [
 		{ key: 'opportunity', label: 'Opportunité de poste' },
 		{ key: 'freelance', label: 'Mission freelance' },
 		{ key: 'collaboration', label: 'Collaboration de projet' },
@@ -55,95 +28,143 @@
 		{ key: 'other', label: 'Autre' }
 	];
 
-	function handleSubjectChange(e: Event) {
-		formData.subject = (e.target as HTMLSelectElement).value as SubjectKey;
-		clearError('subject');
-	}
+	const errorMessages: Partial<Record<keyof Fields, string>> = {
+		firstName: 'Prénom requis',
+		lastName: 'Nom requis',
+		email: 'Adresse email invalide',
+		subject: 'Veuillez sélectionner un sujet',
+		message: 'Message trop court (20 caractères minimum)',
+		consent: 'Vous devez accepter pour continuer'
+	};
+
+	let fields: Fields = {
+		firstName: '',
+		lastName: '',
+		email: '',
+		subject: '',
+		message: '',
+		consent: false
+	};
+	let errors: Errors = {};
+	let shaking: Shaking = {};
+	let status: Status = 'idle';
+	let honeypot = '';
+	let startTime: number;
+	let charCount = 0;
+	const MAX = 1000;
+
+	let errorText: Partial<Record<keyof Fields, string>> = {};
+	let errorTimers: Partial<Record<keyof Fields, ReturnType<typeof setTimeout>>> = {};
+
+	let mounted = false;
 
 	onMount(() => {
-		formStartTime = Date.now();
-		setTimeout(() => (isVisible = true), 100);
+		startTime = Date.now();
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				mounted = true;
+			});
+		});
 	});
 
-	function validateEmail(email: string): boolean {
-		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+	function shake(key: keyof Fields) {
+		shaking = { ...shaking, [key]: true };
+		setTimeout(() => {
+			shaking = { ...shaking, [key]: false };
+		}, 400);
 	}
 
-	function sanitize(str: string): string {
-		return str.replace(/[<>]/g, '').trim();
+	function validateEmail(v: string) {
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 	}
 
-	function validate(): boolean {
-		const newErrors: FormErrors = {};
-		if (!formData.firstName.trim()) newErrors.firstName = 'Prénom requis';
-		if (!formData.lastName.trim()) newErrors.lastName = 'Nom requis';
-		if (!formData.email.trim()) {
-			newErrors.email = 'Email requis';
-		} else if (!validateEmail(formData.email)) {
-			newErrors.email = 'Email invalide';
+	function sanitize(v: string) {
+		return v.replace(/[<>]/g, '').trim();
+	}
+
+	function setError(key: keyof Fields, hasError: boolean) {
+		if (hasError) {
+			clearTimeout(errorTimers[key]);
+			errorText = { ...errorText, [key]: errorMessages[key] };
+			errors = { ...errors, [key]: true };
+		} else {
+			errors = { ...errors, [key]: false };
+			errorTimers[key] = setTimeout(() => {
+				errorText = { ...errorText, [key]: '' };
+			}, 450);
 		}
-		if (!formData.subject) newErrors.subject = 'Veuillez sélectionner un sujet';
-		if (!formData.message.trim()) {
-			newErrors.message = 'Message requis';
-		} else if (formData.message.trim().length < 20) {
-			newErrors.message = 'Message trop court (minimum 20 caractères)';
+	}
+
+	function checkField(key: keyof Fields): boolean {
+		const v = fields[key];
+		let invalid = false;
+		if (key === 'firstName' || key === 'lastName') invalid = !(v as string).trim();
+		if (key === 'email') invalid = !(v as string).trim() || !validateEmail(v as string);
+		if (key === 'subject') invalid = !v;
+		if (key === 'message') invalid = (v as string).trim().length < 20;
+		if (key === 'consent') invalid = !(v as boolean);
+		if (invalid) {
+			setError(key, true);
+			shake(key);
+		} else {
+			setError(key, false);
 		}
-		if (!formData.consent) newErrors.consent = 'Vous devez accepter pour continuer';
-		errors = newErrors;
-		return Object.keys(newErrors).length === 0;
+		return !invalid;
 	}
 
-	function clearError(field: keyof FormErrors) {
-		errors = { ...errors, [field]: undefined };
+	function validateAll(): boolean {
+		const keys: (keyof Fields)[] = [
+			'firstName',
+			'lastName',
+			'email',
+			'subject',
+			'message',
+			'consent'
+		];
+		return keys.map((k) => checkField(k)).every(Boolean);
 	}
 
-	async function handleSubmit() {
-		if (honeypot !== '') return;
-		const elapsed = Date.now() - formStartTime;
-		if (elapsed < 2000) return;
-		if (!validate()) return;
+	function onBlurField(key: keyof Fields) {
+		const v = fields[key];
+		const hasValue = typeof v === 'string' ? v.trim().length > 0 : v;
+		if (hasValue) checkField(key);
+	}
+
+	function onMessageInput(e: Event) {
+		const t = e.target as HTMLTextAreaElement;
+		charCount = Math.min(t.value.length, MAX);
+		fields.message = t.value.slice(0, MAX);
+	}
+
+	async function submit() {
+		if (honeypot || Date.now() - startTime < 2000) return;
+		if (!validateAll()) return;
 
 		status = 'loading';
-
-		const payload = {
-			firstName: sanitize(formData.firstName),
-			lastName: sanitize(formData.lastName),
-			email: sanitize(formData.email),
-			subject: formData.subject,
-			message: sanitize(formData.message)
-		};
-
 		try {
 			const res = await fetch('/api/contact', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload)
+				body: JSON.stringify({
+					firstName: sanitize(fields.firstName),
+					lastName: sanitize(fields.lastName),
+					email: sanitize(fields.email),
+					subject: fields.subject,
+					message: sanitize(fields.message)
+				})
 			});
-			if (!res.ok) throw new Error('Server error');
+			if (!res.ok) throw new Error();
 			status = 'success';
-			resetForm();
+			fields = { firstName: '', lastName: '', email: '', subject: '', message: '', consent: false };
+			errors = {};
+			errorText = {};
+			charCount = 0;
 		} catch {
 			status = 'error';
 		}
 	}
 
-	function resetForm() {
-		formData = { firstName: '', lastName: '', email: '', subject: '', message: '', consent: false };
-		errors = {};
-		charCount = 0;
-	}
-
-	function handleMessageInput(e: Event) {
-		const target = e.target as HTMLTextAreaElement;
-		charCount = target.value.length;
-		if (charCount > MAX_CHARS) {
-			formData.message = target.value.slice(0, MAX_CHARS);
-			charCount = MAX_CHARS;
-		}
-		clearError('message');
-	}
-
-	function retryForm() {
+	function retry() {
 		status = 'idle';
 	}
 </script>
@@ -161,12 +182,12 @@
 	/>
 </svelte:head>
 
-<div class="page-shell" class:visible={isVisible}>
-	<Header />
+<Header />
 
-	<div class="layout">
-		<aside class="left-panel" aria-hidden="true">
-			{#if browser}
+<main class="layout">
+	<section class="panel-left" aria-hidden="true">
+		{#if browser}
+			<div class="grainient-wrap" class:anim-ready={mounted}>
 				<Grainient
 					color1="#c8b8ff"
 					color2="#1a1060"
@@ -184,471 +205,565 @@
 					blendAngle={-15.0}
 					rotationAmount={420.0}
 				/>
-			{/if}
-
-			<div class="bookmark">
-				<span class="bm-eyebrow">Travaillons ensemble</span>
-				<h1>
-					Une idée ?<br />
-					<em>Parlons-en.</em>
-				</h1>
-				<p class="bm-sub">Chaque message reçoit une réponse personnelle sous 24 à 48 h.</p>
-
-				<ul class="info-list">
-					<li>
-						<span class="info-label">Localisation</span>
-						<span class="info-value">Rennes — Remote</span>
-					</li>
-					<li>
-						<span class="info-label">Disponibilité</span>
-						<span class="info-value">Ouvert aux opportunités</span>
-					</li>
-					<li>
-						<span class="info-label">Langues</span>
-						<span class="info-value">Français · Anglais TOEIC</span>
-					</li>
-				</ul>
-
-				<div class="bm-links">
-					<a href="mailto:charlie.charron.pro@gmail.com" class="bm-link">
-						charlie.charron.pro@gmail.com
-					</a>
-					<a
-						href="https://github.com/QW6D3"
-						target="_blank"
-						rel="noopener noreferrer"
-						class="bm-link"
-					>
-						GitHub ↗
-					</a>
-					<a
-						href="https://www.linkedin.com/in/charlie-charron"
-						target="_blank"
-						rel="noopener noreferrer"
-						class="bm-link"
-					>
-						LinkedIn ↗
-					</a>
+				<div class="panel-title" class:anim-ready={mounted}>
+					<h1>Une idée ? Parlons-en.</h1>
 				</div>
 			</div>
-		</aside>
+		{/if}
 
-		<main class="right-panel" aria-label="Formulaire de contact">
-			{#if status === 'success'}
-				<div class="feedback success" role="status" aria-live="polite">
-					<div class="feedback-icon">✓</div>
-					<h2>Message envoyé !</h2>
-					<p>Merci pour votre message. Je vous répondrai dans les 24 à 48 heures.</p>
-					<button class="btn-reset" on:click={retryForm}>Envoyer un autre message</button>
-				</div>
-			{:else if status === 'error'}
-				<div class="feedback error" role="alert" aria-live="assertive">
-					<div class="feedback-icon">✗</div>
-					<h2>Une erreur est survenue</h2>
-					<p>
-						Réessayez ou écrivez directement à
-						<a href="mailto:charlie.charron.pro@gmail.com">charlie.charron.pro@gmail.com</a>
-					</p>
-					<button class="btn-reset" on:click={retryForm}>Réessayer</button>
-				</div>
-			{:else}
-				<div class="form-container">
-					<div class="form-header">
-						<h2>Envoyez-moi un message</h2>
-						<p>Les champs <abbr title="obligatoires">*</abbr> sont requis.</p>
+		<div class="bookmark" class:anim-ready={mounted}>
+			<div class="bookmark-content" class:anim-ready={mounted}>
+				<span class="eyebrow">Mes infos</span>
+				<p class="tagline">Chaque message reçoit une réponse personnelle sous 24 à 48 h.</p>
+
+				<dl class="info">
+					<div>
+						<dt>Localisation</dt>
+						<dd>Rennes — Remote</dd>
 					</div>
+					<div>
+						<dt>Disponibilité</dt>
+						<dd>Ouvert aux opportunités</dd>
+					</div>
+					<div>
+						<dt>Langues</dt>
+						<dd>Français · Anglais TOEIC</dd>
+					</div>
+				</dl>
 
-					<div class="mobile-info">
-						<a href="mailto:charlie.charron.pro@gmail.com" class="mobile-link">
-							charlie.charron.pro@gmail.com
-						</a>
-						<a
-							href="https://github.com/QW6D3"
-							target="_blank"
-							rel="noopener noreferrer"
-							class="mobile-link"
+				<ul class="links" role="list">
+					<li><a href="mailto:charlie.charron.pro@gmail.com">charlie.charron.pro@gmail.com</a></li>
+					<li>
+						<a href="https://github.com/QW6D3" target="_blank" rel="noopener noreferrer">GitHub ↗</a
 						>
-							GitHub ↗
-						</a>
+					</li>
+					<li>
 						<a
 							href="https://www.linkedin.com/in/charlie-charron"
 							target="_blank"
-							rel="noopener noreferrer"
-							class="mobile-link"
+							rel="noopener noreferrer">LinkedIn ↗</a
 						>
-							LinkedIn ↗
-						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</section>
+
+	<section class="panel-right" aria-label="Formulaire de contact">
+		<div class="form-wrap">
+			{#if status === 'success'}
+				<div class="feedback success" role="status">
+					<span class="icon" aria-hidden="true">✓</span>
+					<h2>Message envoyé !</h2>
+					<p>Je vous répondrai dans les 24 à 48 heures.</p>
+					<button class="btn-reset" on:click={retry}>Envoyer un autre message</button>
+				</div>
+			{:else}
+				<div class="form-header" class:anim-ready={mounted}>
+					<span class="anim-item" style="--i:0">
+						<MessageCircleMore color="#8783d1" size={36} aria-hidden="true" strokeWidth={2.5} />
+					</span>
+					<h2 class="anim-item" style="--i:1">Envoyez-moi un message</h2>
+					<p class="anim-item" style="--i:2">
+						Une idée, une opportunité ou juste une question ?<br />Remplissez le formulaire, je vous
+						réponds sous 48 h.
+					</p>
+				</div>
+
+				<ul class="mobile-links anim-item" class:anim-ready={mounted} style="--i:3" role="list">
+					<li><a href="mailto:charlie.charron.pro@gmail.com">charlie.charron.pro@gmail.com</a></li>
+					<li>
+						<a href="https://github.com/QW6D3" target="_blank" rel="noopener noreferrer">GitHub ↗</a
+						>
+					</li>
+					<li>
+						<a
+							href="https://www.linkedin.com/in/charlie-charron"
+							target="_blank"
+							rel="noopener noreferrer">LinkedIn ↗</a
+						>
+					</li>
+				</ul>
+
+				<form
+					class="anim-item"
+					class:anim-ready={mounted}
+					style="--i:4"
+					on:submit|preventDefault={submit}
+					novalidate
+				>
+					<div class="hp" aria-hidden="true">
+						<input
+							type="text"
+							name="website"
+							tabindex="-1"
+							autocomplete="off"
+							bind:value={honeypot}
+						/>
 					</div>
 
-					<form on:submit|preventDefault={handleSubmit} novalidate>
-						<div class="hp-field" aria-hidden="true">
+					<div class="row">
+						<div class="field" class:err={errors.firstName} class:shake={shaking.firstName}>
+							<label for="firstName">Prénom <abbr title="obligatoire">*</abbr></label>
 							<input
+								id="firstName"
 								type="text"
-								name="website"
-								tabindex="-1"
-								autocomplete="off"
-								bind:value={honeypot}
+								bind:value={fields.firstName}
+								on:blur={() => onBlurField('firstName')}
+								on:input={() => {
+									if (errors.firstName) setError('firstName', false);
+								}}
+								placeholder="Charlie"
+								autocomplete="given-name"
+								aria-required="true"
+								aria-invalid={!!errors.firstName}
+								maxlength={50}
 							/>
+							<span class="err-msg" class:visible={errors.firstName} role="alert">
+								{errorText.firstName ?? ''}
+							</span>
 						</div>
 
-						<div class="field-row">
-							<div class="field" class:has-error={errors.firstName}>
-								<label for="firstName">Prénom *</label>
-								<input
-									id="firstName"
-									type="text"
-									bind:value={formData.firstName}
-									on:input={() => clearError('firstName')}
-									placeholder="Charlie"
-									autocomplete="given-name"
-									aria-required="true"
-									aria-invalid={!!errors.firstName}
-									aria-describedby={errors.firstName ? 'err-firstName' : undefined}
-									maxlength={50}
-								/>
-								{#if errors.firstName}
-									<span id="err-firstName" class="error-msg" role="alert">{errors.firstName}</span>
-								{/if}
-							</div>
-
-							<div class="field" class:has-error={errors.lastName}>
-								<label for="lastName">Nom *</label>
-								<input
-									id="lastName"
-									type="text"
-									bind:value={formData.lastName}
-									on:input={() => clearError('lastName')}
-									placeholder="Charron"
-									autocomplete="family-name"
-									aria-required="true"
-									aria-invalid={!!errors.lastName}
-									aria-describedby={errors.lastName ? 'err-lastName' : undefined}
-									maxlength={50}
-								/>
-								{#if errors.lastName}
-									<span id="err-lastName" class="error-msg" role="alert">{errors.lastName}</span>
-								{/if}
-							</div>
-						</div>
-
-						<div class="field" class:has-error={errors.email}>
-							<label for="email">Email *</label>
+						<div class="field" class:err={errors.lastName} class:shake={shaking.lastName}>
+							<label for="lastName">Nom <abbr title="obligatoire">*</abbr></label>
 							<input
-								id="email"
-								type="email"
-								bind:value={formData.email}
-								on:input={() => clearError('email')}
-								placeholder="votre@email.com"
-								autocomplete="email"
+								id="lastName"
+								type="text"
+								bind:value={fields.lastName}
+								on:blur={() => onBlurField('lastName')}
+								on:input={() => {
+									if (errors.lastName) setError('lastName', false);
+								}}
+								placeholder="Charron"
+								autocomplete="family-name"
 								aria-required="true"
-								aria-invalid={!!errors.email}
-								aria-describedby={errors.email ? 'err-email' : undefined}
-								maxlength={100}
+								aria-invalid={!!errors.lastName}
+								maxlength={50}
 							/>
-							{#if errors.email}
-								<span id="err-email" class="error-msg" role="alert">{errors.email}</span>
-							{/if}
+							<span class="err-msg" class:visible={errors.lastName} role="alert">
+								{errorText.lastName ?? ''}
+							</span>
 						</div>
+					</div>
 
-						<div class="field" class:has-error={errors.subject}>
-							<label for="subject">Sujet *</label>
-							<div class="select-wrapper">
-								<select
-									id="subject"
-									value={formData.subject}
-									on:change={handleSubjectChange}
-									aria-required="true"
-									aria-invalid={!!errors.subject}
-									aria-describedby={errors.subject ? 'err-subject' : undefined}
-								>
-									<option value="" disabled selected>Sélectionnez un sujet</option>
-									{#each subjectEntries as entry (entry.key)}
-										<option value={entry.key}>{entry.label}</option>
-									{/each}
-								</select>
-								<span class="select-arrow" aria-hidden="true">↓</span>
-							</div>
-							{#if errors.subject}
-								<span id="err-subject" class="error-msg" role="alert">{errors.subject}</span>
-							{/if}
-						</div>
+					<div class="field" class:err={errors.email} class:shake={shaking.email}>
+						<label for="email">Email <abbr title="obligatoire">*</abbr></label>
+						<input
+							id="email"
+							type="email"
+							bind:value={fields.email}
+							on:blur={() => onBlurField('email')}
+							on:input={() => {
+								if (errors.email) setError('email', false);
+							}}
+							placeholder="votre@email.com"
+							autocomplete="email"
+							aria-required="true"
+							aria-invalid={!!errors.email}
+							maxlength={100}
+						/>
+						<span class="err-msg" class:visible={errors.email} role="alert">
+							{errorText.email ?? ''}
+						</span>
+					</div>
 
-						<div class="field" class:has-error={errors.message}>
-							<label for="message">Message *</label>
-							<textarea
-								id="message"
-								bind:value={formData.message}
-								on:input={handleMessageInput}
-								placeholder="Décrivez votre besoin, votre projet ou votre opportunité..."
-								rows={4}
+					<div class="field" class:err={errors.subject} class:shake={shaking.subject}>
+						<label for="subject">Sujet <abbr title="obligatoire">*</abbr></label>
+						<div class="select-wrap">
+							<select
+								id="subject"
+								bind:value={fields.subject}
+								on:blur={() => onBlurField('subject')}
+								on:change={() => {
+									if (errors.subject) setError('subject', false);
+								}}
 								aria-required="true"
-								aria-invalid={!!errors.message}
-								aria-describedby="char-count {errors.message ? 'err-message' : ''}"
-							></textarea>
-							<div class="textarea-footer">
-								{#if errors.message}
-									<span id="err-message" class="error-msg" role="alert">{errors.message}</span>
-								{:else}
-									<span></span>
-								{/if}
-								<span
-									id="char-count"
-									class="char-count"
-									class:near-limit={charCount > MAX_CHARS * 0.8}
-									aria-live="polite">{charCount}/{MAX_CHARS}</span
-								>
-							</div>
-						</div>
-
-						<div class="field consent-field" class:has-error={errors.consent}>
-							<label class="checkbox-label">
-								<input
-									type="checkbox"
-									bind:checked={formData.consent}
-									on:change={() => clearError('consent')}
-									aria-required="true"
-									aria-invalid={!!errors.consent}
-									aria-describedby={errors.consent ? 'err-consent' : undefined}
-								/>
-								<span class="checkmark" aria-hidden="true"></span>
-								<span>J'accepte que mes données soient utilisées pour répondre à ma demande.</span>
-							</label>
-							{#if errors.consent}
-								<span id="err-consent" class="error-msg" role="alert">{errors.consent}</span>
-							{/if}
-						</div>
-
-						<div class="form-actions">
-							<button
-								type="submit"
-								class="btn-submit"
-								disabled={status === 'loading'}
-								aria-busy={status === 'loading'}
+								aria-invalid={!!errors.subject}
 							>
-								{#if status === 'loading'}
-									<span class="spinner" aria-hidden="true"></span>
-									<span>Envoi en cours…</span>
-								{:else}
-									<span>Envoyer</span>
-									<span class="btn-arrow" aria-hidden="true">→</span>
-								{/if}
-							</button>
+								<option value="" disabled>Sélectionnez un sujet</option>
+								{#each subjects as s (s.key)}
+									<option value={s.key}>{s.label}</option>
+								{/each}
+							</select>
+							<span aria-hidden="true">↓</span>
 						</div>
-					</form>
-				</div>
+						<span class="err-msg" class:visible={errors.subject} role="alert">
+							{errorText.subject ?? ''}
+						</span>
+					</div>
+
+					<div class="field" class:err={errors.message} class:shake={shaking.message}>
+						<label for="message">Message <abbr title="obligatoire">*</abbr></label>
+						<textarea
+							id="message"
+							bind:value={fields.message}
+							on:input={onMessageInput}
+							on:blur={() => onBlurField('message')}
+							placeholder="Décrivez votre besoin, votre projet ou votre opportunité..."
+							rows={5}
+							aria-required="true"
+							aria-invalid={!!errors.message}
+						></textarea>
+						<div class="textarea-footer">
+							<span class="err-msg" class:visible={errors.message} role="alert">
+								{errorText.message ?? ''}
+							</span>
+							<span class="count" class:warn={charCount > MAX * 0.8} aria-live="polite"
+								>{charCount}/{MAX}</span
+							>
+						</div>
+					</div>
+
+					<div class="field consent" class:err={errors.consent} class:shake={shaking.consent}>
+						<label class="check-label">
+							<input
+								type="checkbox"
+								bind:checked={fields.consent}
+								on:blur={() => onBlurField('consent')}
+								on:change={() => {
+									if (errors.consent) setError('consent', false);
+								}}
+								aria-required="true"
+								aria-invalid={!!errors.consent}
+							/>
+							<span class="box" aria-hidden="true"></span>
+							<span>J'accepte que mes données soient utilisées pour répondre à ma demande.</span>
+						</label>
+						<span class="err-msg" class:visible={errors.consent} role="alert">
+							{errorText.consent ?? ''}
+						</span>
+					</div>
+
+					<button
+						type="submit"
+						class="btn-submit"
+						class:is-error={status === 'error'}
+						disabled={status === 'loading'}
+						aria-busy={status === 'loading'}
+					>
+						{#if status === 'loading'}
+							<span class="spinner" aria-hidden="true"></span>
+							<span>Envoi en cours…</span>
+						{:else if status === 'error'}
+							<X size={16} aria-hidden="true" />
+							<span>Échec — réessayer</span>
+						{:else}
+							<Send size={16} aria-hidden="true" />
+							<span>Envoyer</span>
+						{/if}
+					</button>
+				</form>
 			{/if}
-		</main>
-	</div>
-</div>
+		</div>
+	</section>
+</main>
 
 <style lang="scss">
-	@use 'sass:color';
-
-	$bg: #f4f3ef;
-	$surface: #ffffff;
-	$ink: #1c1c1a;
-	$muted: #72716d;
-	$border: #e0ddd6;
+	$ease: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+	$radius: 22px;
 	$error: #c0392b;
 	$success: #27ae60;
-	$radius-sm: 7px;
-	$ease: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
-	.page-shell {
-		height: 100dvh;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-		background: $bg;
-		color: $ink;
-		opacity: 0;
-		transition: opacity 400ms ease;
-		&.visible {
+	@keyframes bookmarkDrop {
+		from {
+			max-height: 0;
+			opacity: 0;
+		}
+		to {
+			max-height: 455px;
 			opacity: 1;
 		}
 	}
 
-	.layout {
-		flex: 1;
-		display: flex;
-		min-height: 0;
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(16px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
-	.left-panel {
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	.bookmark {
+		max-height: 0;
+		opacity: 0;
+
+		&.anim-ready {
+			animation: bookmarkDrop 900ms cubic-bezier(0.22, 1, 0.36, 1) 100ms forwards;
+		}
+	}
+	.bookmark-content {
+		opacity: 0;
+
+		&.anim-ready {
+			animation: fadeIn 400ms ease forwards;
+			animation-delay: 700ms;
+		}
+	}
+
+	.grainient-wrap {
+		opacity: 0;
+		transform: scale(0.98);
+		transition:
+			opacity 900ms ease,
+			transform 900ms ease;
+
+		&.anim-ready {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+
+	// Titre dans le panel gauche
+	.panel-title {
+		opacity: 0;
+		transform: translateY(10px);
+		transition:
+			opacity 600ms ease 500ms,
+			transform 600ms ease 500ms;
+
+		&.anim-ready {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	// Éléments du formulaire en cascade (--i = index du stagger)
+	.anim-item {
+		opacity: 0;
+		transform: translateY(16px);
+		transition: none;
+	}
+
+	.form-header.anim-ready .anim-item,
+	.anim-item.anim-ready {
+		animation: fadeInUp 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+		animation-delay: calc(500ms + var(--i, 0) * 110ms);
+	}
+
+	.layout {
+		display: flex;
+		height: calc(100dvh - 88px * 2);
+	}
+
+	.panel-left {
 		position: relative;
-		flex: 0 0 44%;
-		overflow: hidden;
+		flex: 0 0 60%;
+
 		@media (max-width: 860px) {
 			display: none;
 		}
 	}
 
-	.bookmark {
+	.grainient-wrap {
 		position: absolute;
-		top: 32px;
-		left: 28px;
-		width: min(300px, calc(100% - 56px));
-		background: rgba(8, 6, 20, 0.45);
-		backdrop-filter: blur(22px) saturate(1.6);
-		-webkit-backdrop-filter: blur(22px) saturate(1.6);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 12px;
-		padding: 26px 24px 22px;
-		color: #fff;
-	}
+		inset: 0;
+		border-radius: $radius;
+		overflow: hidden;
 
-	.bm-eyebrow {
-		display: block;
-		font-size: 0.65rem;
-		font-weight: 500;
-		letter-spacing: 0.15em;
-		text-transform: uppercase;
-		color: rgba(255, 255, 255, 0.55);
-		margin-bottom: 13px;
-	}
+		.panel-title {
+			position: absolute;
+			bottom: 30px;
+			left: 30px;
+			color: var(--color-bg);
 
-	.bookmark h1 {
-		font-size: clamp(1.6rem, 2.2vw, 2rem);
-		font-weight: 700;
-		line-height: 1.15;
-		margin: 0 0 10px;
-		color: #fff;
-		em {
-			font-style: italic;
-			font-weight: 400;
-			color: rgba(255, 255, 255, 0.68);
-		}
-	}
-
-	.bm-sub {
-		font-size: 0.78rem;
-		color: rgba(255, 255, 255, 0.55);
-		line-height: 1.55;
-		margin: 0 0 20px;
-	}
-
-	.info-list {
-		list-style: none;
-		padding: 18px 0 0;
-		margin: 0 0 20px;
-		border-top: 1px solid rgba(255, 255, 255, 0.11);
-		display: flex;
-		flex-direction: column;
-		gap: 9px;
-		li {
-			display: flex;
-			justify-content: space-between;
-			align-items: baseline;
-			gap: 10px;
-		}
-		.info-label {
-			font-size: 0.64rem;
-			text-transform: uppercase;
-			letter-spacing: 0.1em;
-			color: rgba(255, 255, 255, 0.42);
-			white-space: nowrap;
-			flex-shrink: 0;
-		}
-		.info-value {
-			font-size: 0.78rem;
-			color: rgba(255, 255, 255, 0.85);
-			text-align: right;
-		}
-	}
-
-	.bm-links {
-		border-top: 1px solid rgba(255, 255, 255, 0.11);
-		padding-top: 16px;
-		display: flex;
-		flex-direction: column;
-		gap: 5px;
-	}
-
-	.bm-link {
-		font-size: 0.76rem;
-		color: rgba(255, 255, 255, 0.62);
-		text-decoration: none;
-		transition: color $ease;
-		&:hover {
-			color: #fff;
-		}
-		&:focus-visible {
-			outline: 2px solid rgba(255, 255, 255, 0.55);
-			outline-offset: 3px;
-			border-radius: 3px;
-		}
-	}
-
-	.right-panel {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 40px 48px;
-		overflow-y: auto;
-		@media (max-width: 1024px) {
-			padding: 32px 32px;
-		}
-		@media (max-width: 860px) {
-			padding: 28px 20px;
-			align-items: flex-start;
-		}
-	}
-
-	.form-container {
-		width: 100%;
-		max-width: 420px;
-	}
-
-	.form-header {
-		margin-bottom: 24px;
-		h2 {
-			font-size: clamp(1.25rem, 2vw, 1.6rem);
-			font-weight: 700;
-			margin: 0 0 5px;
-			color: $ink;
-			line-height: 1.2;
-		}
-		p {
-			font-size: 0.75rem;
-			color: $muted;
-			margin: 0;
-			abbr {
-				text-decoration: none;
-				color: $error;
-				font-style: normal;
+			h1 {
+				font-weight: 900;
+				font-size: clamp(40px, 3.5vw, 125px);
+				opacity: 0.95;
 			}
 		}
 	}
 
-	.mobile-info {
+	.bookmark {
+		position: absolute;
+		top: -15px;
+		left: 10%;
+		width: 300px;
+		background: #fff;
+		color: var(--color-text);
+		border-radius: 0 0 12px 12px;
+		padding: 24px;
+		z-index: 1;
+
+		&::before {
+			content: '';
+			position: absolute;
+			inset: 0;
+			border-radius: inherit;
+			box-shadow: -14px 24px 38px rgba(0, 0, 0, 0.35);
+			z-index: -1;
+		}
+	}
+
+	.eyebrow {
+		display: block;
+		font-size: 0.6rem;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		opacity: 0.4;
+	}
+
+	.tagline {
+		font-size: 0.72rem;
+		opacity: 0.5;
+		line-height: 1.5;
+		margin: 0 0 16px;
+	}
+
+	.info {
+		border-top: 1px solid rgba(0, 0, 0, 0.08);
+		padding-top: 14px;
+		margin: 0 0 14px;
+		display: flex;
+		flex-direction: column;
+		gap: 7px;
+
+		> div {
+			display: flex;
+			justify-content: space-between;
+			align-items: baseline;
+			gap: 8px;
+		}
+
+		dt {
+			font-size: 0.6rem;
+			text-transform: uppercase;
+			letter-spacing: 0.1em;
+			opacity: 0.35;
+			white-space: nowrap;
+			flex-shrink: 0;
+		}
+
+		dd {
+			font-size: 0.72rem;
+			opacity: 0.75;
+			text-align: right;
+			margin: 0;
+		}
+	}
+
+	.links {
+		border-top: 1px solid rgba(0, 0, 0, 0.08);
+		padding-top: 12px;
+		list-style: none;
+		margin: 0;
+		padding-left: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+
+		a {
+			font-size: 0.7rem;
+			color: var(--color-text);
+			opacity: 0.5;
+			text-decoration: none;
+			transition: opacity $ease;
+
+			&:hover {
+				opacity: 1;
+			}
+			&:focus-visible {
+				outline: 2px solid var(--color-text);
+				outline-offset: 2px;
+				border-radius: 2px;
+			}
+		}
+	}
+
+	.panel-right {
+		flex: 1;
+		overflow-y: auto;
+		display: flex;
+		align-items: flex-start;
+		padding: 0 44px 0 88px;
+
+		@media (max-width: 1024px) {
+			padding: 36px 28px;
+		}
+		@media (max-width: 860px) {
+			padding: 28px 20px;
+		}
+	}
+
+	.form-wrap {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 38px;
+		justify-content: center;
+		padding: 32px 0;
+
+		@media (max-width: 860px) {
+			gap: 0;
+			justify-content: flex-start;
+			padding: 0;
+		}
+	}
+
+	.form-header {
+		display: flex;
+		flex-direction: column;
+		gap: 26px;
+		margin-bottom: 28px;
+
+		@media (max-width: 860px) {
+			gap: 12px;
+			margin-bottom: 20px;
+		}
+
+		h2 {
+			margin: 0;
+			font-weight: 700;
+		}
+
+		p {
+			margin: 0;
+			opacity: 0.5;
+			line-height: 1.55;
+		}
+	}
+
+	.mobile-links {
 		display: none;
-		gap: 16px;
-		margin-bottom: 24px;
-		padding-bottom: 20px;
-		border-bottom: 1px solid $border;
+		list-style: none;
+		margin: 0 0 28px;
+		padding: 0 0 20px;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+		flex-wrap: wrap;
+		gap: 12px;
+
 		@media (max-width: 860px) {
 			display: flex;
-			flex-wrap: wrap;
+		}
+
+		a {
+			font-size: 0.78rem;
+			color: var(--color-text);
+			opacity: 0.5;
+			text-decoration: none;
+			border-bottom: 1px solid currentColor;
+			padding-bottom: 1px;
+			transition: opacity $ease;
+
+			&:hover {
+				opacity: 1;
+			}
 		}
 	}
 
-	.mobile-link {
-		font-size: 0.8rem;
-		color: $muted;
-		text-decoration: none;
-		border-bottom: 1px solid $border;
-		padding-bottom: 1px;
-		transition:
-			color $ease,
-			border-color $ease;
-		&:hover {
-			color: $ink;
-			border-color: $ink;
-		}
-	}
-
-	.hp-field {
+	.hp {
 		position: absolute;
 		width: 1px;
 		height: 1px;
@@ -657,11 +772,12 @@
 		white-space: nowrap;
 	}
 
-	.field-row {
+	.row {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 14px;
-		@media (max-width: 400px) {
+		gap: 16px;
+
+		@media (max-width: 480px) {
 			grid-template-columns: 1fr;
 		}
 	}
@@ -669,98 +785,99 @@
 	.field {
 		display: flex;
 		flex-direction: column;
-		gap: 5px;
-		margin-bottom: 14px;
+		gap: 6px;
+		margin-bottom: 20px;
 
 		label {
-			font-size: 0.75rem;
-			font-weight: 500;
-			color: $ink;
+			font-size: 0.78rem;
+			opacity: 0.75;
+
+			abbr {
+				text-decoration: none;
+				color: $error;
+			}
 		}
 
 		input,
 		select,
 		textarea {
-			font-size: 0.88rem;
-			color: $ink;
-			background: $surface;
-			border: 1.5px solid $border;
-			border-radius: $radius-sm;
-			padding: 9px 12px;
 			width: 100%;
 			box-sizing: border-box;
+			padding: 12px 14px;
+			border: 1.5px solid rgba(0, 0, 0, 0.15);
+			border-radius: 8px;
+			background: #fff;
+			color: var(--color-text);
 			outline: none;
 			appearance: none;
 			transition:
 				border-color $ease,
 				box-shadow $ease;
+
 			&::placeholder {
-				color: color.adjust($muted, $lightness: 20%);
+				opacity: 0.35;
 			}
-			&:hover {
-				border-color: color.adjust($border, $lightness: -10%);
-			}
+
 			&:focus {
-				border-color: $ink;
-				box-shadow: 0 0 0 3px rgba(28, 28, 26, 0.07);
+				border-color: var(--color-text);
+				box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
 			}
 		}
 
 		textarea {
 			resize: none;
-			min-height: 88px;
 			line-height: 1.6;
 		}
 
-		&.has-error {
+		&.err {
 			input,
 			select,
 			textarea {
 				border-color: $error;
-				background: color.adjust($error, $lightness: 50%);
-				&:focus {
-					box-shadow: 0 0 0 3px rgba($error, 0.1);
-				}
+				box-shadow: 0 0 0 3px rgba($error, 0.08);
 			}
 		}
+
+		&.shake {
+			animation: shake 350ms ease;
+		}
 	}
 
-	.error-msg {
-		font-size: 0.71rem;
+	.err-msg {
+		font-size: 0.7rem;
 		color: $error;
-		font-weight: 500;
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		&::before {
-			content: '!';
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			width: 13px;
-			height: 13px;
-			background: $error;
-			color: white;
-			border-radius: 50%;
-			font-size: 0.6rem;
-			font-weight: 700;
-			flex-shrink: 0;
+		display: block;
+		overflow: hidden;
+		max-height: 0;
+		opacity: 0;
+		transform: translateY(-4px);
+		transition:
+			max-height 450ms ease-out,
+			opacity 350ms ease-out,
+			transform 450ms ease-out;
+
+		&.visible {
+			max-height: 2rem;
+			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 
-	.select-wrapper {
+	.select-wrap {
 		position: relative;
+
 		select {
+			padding-right: 36px;
 			cursor: pointer;
-			padding-right: 34px;
 		}
-		.select-arrow {
+
+		> span {
 			position: absolute;
 			right: 12px;
 			top: 50%;
 			transform: translateY(-50%);
 			pointer-events: none;
-			color: $muted;
+			opacity: 0.4;
 			font-size: 0.75rem;
 		}
 	}
@@ -771,28 +888,28 @@
 		align-items: center;
 	}
 
-	.char-count {
-		font-size: 0.68rem;
-		color: $muted;
-		margin-left: auto;
+	.count {
+		font-size: 0.65rem;
+		opacity: 0.4;
 		flex-shrink: 0;
-		&.near-limit {
-			color: color.adjust(#e67e22, $lightness: -10%);
-			font-weight: 500;
+
+		&.warn {
+			color: #e67e22;
+			opacity: 1;
 		}
 	}
 
-	.consent-field {
-		margin-top: 2px;
+	.consent {
+		margin-bottom: 28px;
 	}
 
-	.checkbox-label {
+	.check-label {
 		display: flex;
 		align-items: flex-start;
 		gap: 10px;
 		cursor: pointer;
 		font-size: 0.75rem;
-		color: $muted;
+		opacity: 0.7;
 		line-height: 1.5;
 
 		input[type='checkbox'] {
@@ -800,39 +917,43 @@
 			opacity: 0;
 			width: 0;
 			height: 0;
-			&:checked + .checkmark {
-				background: $ink;
-				border-color: $ink;
+
+			&:checked + .box {
+				background: var(--color-text);
+				border-color: var(--color-text);
+
 				&::after {
 					display: block;
 				}
 			}
-			&:focus-visible + .checkmark {
-				box-shadow: 0 0 0 3px rgba(28, 28, 26, 0.18);
+
+			&:focus-visible + .box {
+				box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
 			}
 		}
 
-		.checkmark {
+		.box {
 			flex-shrink: 0;
-			width: 15px;
-			height: 15px;
-			border: 1.5px solid $border;
-			border-radius: 3px;
-			background: $surface;
+			width: 16px;
+			height: 16px;
+			border: 1.5px solid rgba(0, 0, 0, 0.25);
+			border-radius: 4px;
+			background: #fff;
 			position: relative;
-			margin-top: 2px;
+			margin-top: 1px;
 			transition:
 				background $ease,
 				border-color $ease;
+
 			&::after {
 				content: '';
 				display: none;
 				position: absolute;
 				left: 4px;
 				top: 1px;
-				width: 4px;
-				height: 7px;
-				border: 1.5px solid white;
+				width: 5px;
+				height: 8px;
+				border: 1.5px solid #fff;
 				border-top: none;
 				border-left: none;
 				transform: rotate(45deg);
@@ -840,38 +961,28 @@
 		}
 	}
 
-	.form-actions {
-		margin-top: 20px;
-	}
-
 	.btn-submit {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
-		gap: 9px;
-		background: $ink;
-		color: white;
+		justify-content: center;
+		gap: 8px;
+		width: 100%;
+		background: var(--color-text);
+		color: #fff;
 		border: none;
-		border-radius: 100px;
-		padding: 11px 26px;
-		font-size: 0.85rem;
-		font-weight: 500;
+		border-radius: 12px;
+		padding: 18px 28px;
 		cursor: pointer;
-		letter-spacing: 0.02em;
 		transition:
 			background $ease,
 			transform $ease,
 			box-shadow $ease;
-		.btn-arrow {
-			transition: transform $ease;
-		}
+
 		&:hover:not(:disabled) {
-			background: color.adjust($ink, $lightness: 12%);
-			box-shadow: 0 5px 18px rgba(0, 0, 0, 0.15);
+			box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
 			transform: translateY(-1px);
-			.btn-arrow {
-				transform: translateX(4px);
-			}
 		}
+
 		&:active:not(:disabled) {
 			transform: translateY(0);
 		}
@@ -879,9 +990,14 @@
 			opacity: 0.6;
 			cursor: not-allowed;
 		}
+
 		&:focus-visible {
-			outline: 2px solid $ink;
+			outline: 2px solid var(--color-text);
 			outline-offset: 4px;
+		}
+
+		&.is-error {
+			background: $error;
 		}
 	}
 
@@ -889,29 +1005,18 @@
 		width: 13px;
 		height: 13px;
 		border: 2px solid rgba(255, 255, 255, 0.3);
-		border-top-color: white;
+		border-top-color: #fff;
 		border-radius: 50%;
 		animation: spin 700ms linear infinite;
 		flex-shrink: 0;
 	}
 
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
 	.feedback {
-		width: 100%;
-		max-width: 420px;
-		text-align: center;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
 		gap: 12px;
-		animation: fadeIn 350ms ease;
 
-		.feedback-icon {
+		.icon {
 			width: 44px;
 			height: 44px;
 			border-radius: 50%;
@@ -920,67 +1025,60 @@
 			justify-content: center;
 			font-size: 1.1rem;
 			font-weight: 700;
-			margin-bottom: 4px;
 		}
+
 		h2 {
-			font-size: 1.35rem;
-			font-weight: 700;
 			margin: 0;
 		}
 		p {
-			font-size: 0.85rem;
-			color: $muted;
-			line-height: 1.6;
+			opacity: 0.6;
 			margin: 0;
-			a {
-				color: $ink;
-				font-weight: 500;
-			}
 		}
-		&.success .feedback-icon {
-			background: color.adjust($success, $lightness: 50%);
+
+		&.success .icon {
+			background: rgba($success, 0.12);
 			color: $success;
-			border: 1.5px solid color.adjust($success, $lightness: 30%);
-		}
-		&.success h2 {
-			color: $success;
-		}
-		&.error .feedback-icon {
-			background: color.adjust($error, $lightness: 40%);
-			color: $error;
-			border: 1.5px solid color.adjust($error, $lightness: 25%);
-		}
-		&.error h2 {
-			color: $error;
+			border: 1.5px solid rgba($success, 0.3);
 		}
 	}
 
 	.btn-reset {
 		background: none;
-		border: 1.5px solid $border;
-		border-radius: 100px;
-		padding: 9px 22px;
-		font-size: 0.83rem;
+		border: 1.5px solid rgba(0, 0, 0, 0.15);
+		border-radius: $radius;
+		padding: 10px 22px;
 		cursor: pointer;
-		color: $ink;
-		transition:
-			border-color $ease,
-			background $ease;
-		margin-top: 4px;
+		color: var(--color-text);
+		align-self: flex-start;
+		transition: border-color $ease;
+
 		&:hover {
-			border-color: $ink;
-			background: $bg;
+			border-color: var(--color-text);
 		}
 	}
 
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-			transform: scale(0.97);
-		}
+	@keyframes spin {
 		to {
-			opacity: 1;
-			transform: scale(1);
+			transform: rotate(360deg);
+		}
+	}
+
+	@keyframes shake {
+		0%,
+		100% {
+			transform: translateX(0);
+		}
+		20% {
+			transform: translateX(-5px);
+		}
+		40% {
+			transform: translateX(5px);
+		}
+		60% {
+			transform: translateX(-3px);
+		}
+		80% {
+			transform: translateX(3px);
 		}
 	}
 </style>

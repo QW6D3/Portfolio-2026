@@ -123,7 +123,7 @@
 	.main-contents {
 		z-index: 3;
 		padding: $page-padding;
-		overflow-y: auto;
+		overflow: hidden;
 		-webkit-overflow-scrolling: touch;
 
 		transition:

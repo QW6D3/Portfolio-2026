@@ -140,7 +140,7 @@ void main() {
 
 	onMount(() => {
 		const renderer = new Renderer({
-			canvas: canvas,
+			canvas: canvas!,
 			webgl: 2,
 			alpha: true,
 			antialias: false,
@@ -214,7 +214,9 @@ void main() {
 	});
 </script>
 
-<div bind:this={container} class="grainient {className}"></div>
+<div bind:this={container} class="grainient {className}">
+	<canvas bind:this={canvas}></canvas>
+</div>
 
 <style lang="scss">
 	.grainient {
