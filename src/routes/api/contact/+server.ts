@@ -1,9 +1,11 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { json, error } from '@sveltejs/kit';
+import { Resend } from 'resend';
+import { RESEND_API_KEY } from '$env/static/private';
 
 // ── Rate limiting ─────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 3; // max submissions
+const RATE_LIMIT = 3;
 const RATE_WINDOW_MS = 60 * 60 * 1000;
 
 function isRateLimited(ip: string): boolean {
@@ -24,6 +26,14 @@ function isRateLimited(ip: string): boolean {
 // ── Validation ────────────────────────────────────────────────
 const VALID_SUBJECTS = ['opportunity', 'freelance', 'collaboration', 'school', 'other'];
 
+const SUBJECT_LABELS: Record<string, string> = {
+	opportunity: 'Opportunité de poste',
+	freelance: 'Mission freelance',
+	collaboration: 'Collaboration de projet',
+	school: 'Candidature école',
+	other: 'Autre'
+};
+
 function isValidEmail(email: string): boolean {
 	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -35,13 +45,11 @@ function sanitize(str: unknown): string {
 
 // ── POST handler ──────────────────────────────────────────────
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
-	// Rate limit by IP
 	const ip = getClientAddress();
 	if (isRateLimited(ip)) {
 		throw error(429, 'Trop de requêtes. Réessayez dans une heure.');
 	}
 
-	// Parse body
 	let body: unknown;
 	try {
 		body = await request.json();
@@ -58,7 +66,6 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	const firstName = sanitize(data.firstName);
 	const lastName = sanitize(data.lastName);
 	const email = sanitize(data.email);
-	const company = sanitize(data.company);
 	const subject = sanitize(data.subject);
 	const message = sanitize(data.message);
 
@@ -75,38 +82,26 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		throw error(422, JSON.stringify(validationErrors));
 	}
 
-	// ── Send email ─────────────────────────────────────────────
-	// Replace this with your preferred email service:
-	// - Resend: https://resend.com
-	// - SendGrid, Postmark, Nodemailer, etc.
-	//
-	// Example with Resend:
-	//
-	// import { RESEND_API_KEY } from '$env/static/private';
-	// const res = await fetch('https://api.resend.com/emails', {
-	//   method: 'POST',
-	//   headers: {
-	//     Authorization: `Bearer ${RESEND_API_KEY}`,
-	//     'Content-Type': 'application/json',
-	//   },
-	//   body: JSON.stringify({
-	//     from: 'contact@votreportfolio.com',
-	//     to: 'votre@email.com',
-	//     reply_to: email,
-	//     subject: `[Portfolio] ${subject} — ${firstName} ${lastName}`,
-	//     text: `
-	//       De : ${firstName} ${lastName} <${email}>
-	//       Entreprise : ${company || 'N/A'}
-	//       Sujet : ${subject}
-	//       Message :
-	//       ${message}
-	//     `,
-	//   }),
-	// });
-	// if (!res.ok) throw error(500, 'Erreur envoi email');
+	// ── Send email via Resend ──────────────────────────────────
+	const resend = new Resend(RESEND_API_KEY);
+	const subjectLabel = SUBJECT_LABELS[subject] ?? subject;
 
-	// Simulate success in dev
-	console.log('[Contact Form]', { firstName, lastName, email, company, subject, message });
+	const { error: resendError } = await resend.emails.send({
+		from: 'Portfolio <onboarding@resend.dev>',
+		to: ['charlie.charron29@gmail.com'],
+		subject: `[Portfolio] ${subjectLabel} — ${firstName} ${lastName}`,
+		html: `
+			<p><strong>De :</strong> ${firstName} ${lastName} &lt;${email}&gt;</p>
+			<p><strong>Sujet :</strong> ${subjectLabel}</p>
+			<hr />
+			<p>${message.replace(/\n/g, '<br />')}</p>
+		`
+	});
+
+	if (resendError) {
+		console.error('[Resend error]', resendError);
+		throw error(500, "Erreur lors de l'envoi de l'email.");
+	}
 
 	return json({ success: true }, { status: 200 });
 };
