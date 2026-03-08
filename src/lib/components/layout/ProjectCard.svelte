@@ -3,12 +3,15 @@
 	import { ArrowUpRight } from 'lucide-svelte';
 	import Grainient from './../ui/Grainient.svelte';
 	import { hexToRgb } from '$lib/utilities/color';
-	import { resolve } from '$app/paths'; // Utilisation de resolve()
+	import { resolve } from '$app/paths';
 
 	export let project: Project;
+	export let maxTags: number = 99;
 
 	$: timeOffset = project.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) * 0.37;
 	$: baseColor = project.colors || '#5227FF';
+	$: displayedTags = project.tags.slice(0, maxTags);
+	$: hiddenCount = project.tags.length - displayedTags.length;
 
 	function darken(hex: string, amount: number): string {
 		const [r, g, b] = hexToRgb(hex);
@@ -66,9 +69,12 @@
 	</div>
 
 	<div class="card-tags" aria-hidden="true">
-		{#each project.tags as tag (tag)}
+		{#each displayedTags as tag (tag)}
 			<span class="tag">{tag}</span>
 		{/each}
+		{#if hiddenCount > 0}
+			<span class="tag tag-more">+{hiddenCount}</span>
+		{/if}
 	</div>
 
 	<div class="btn-tag" aria-hidden="true"></div>
@@ -94,13 +100,18 @@
 		border-radius: 24px;
 		text-decoration: none;
 		background-color: #000;
-		transition: transform 0.4s $ease;
+		transition: transform 0.4s ease;
 
-		&:hover {
-			transform: scale(0.98);
-			.card-tags {
-				opacity: 1;
-				transform: translateY(0);
+		@media (hover: hover) {
+			&:hover {
+				transform: scale(0.98);
+				.card-tags {
+					opacity: 1;
+					transform: translateY(0);
+					transition:
+						opacity 0.1s ease,
+						transform 0.4s ease;
+				}
 			}
 		}
 	}
@@ -109,7 +120,7 @@
 		position: absolute;
 		inset: 0;
 		z-index: 1;
-		transition: transform 0.8s $ease;
+		transition: transform 0.8s ease;
 		border-radius: 24px;
 		overflow: hidden;
 	}
@@ -117,7 +128,7 @@
 	.image-overlay {
 		position: absolute;
 		inset: 0;
-		z-index: 2; // Par dessus le Grainient
+		z-index: 2;
 		background-size: cover;
 		background-position: center;
 		opacity: 0.3;
@@ -129,17 +140,19 @@
 		position: absolute;
 		inset: 0;
 		display: flex;
-		align-items: center;
 		justify-content: center;
+		align-items: stretch;
+		height: 100%;
 		z-index: 5;
 		padding: 2.5rem;
 		pointer-events: none;
 
 		.project-logo {
-			max-width: 70%;
-			max-height: 60%;
+			display: flex;
+			align-items: center;
 			object-fit: contain;
-			filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
+			height: 100%;
+			max-width: 50%;
 		}
 
 		.text-logo {
@@ -161,7 +174,9 @@
 		gap: 8px;
 		opacity: 0;
 		transform: translateY(15px);
-		transition: all 0.4s $ease;
+		transition:
+			opacity 0.4s ease,
+			transform 0.4s ease;
 	}
 
 	.tag {
@@ -174,6 +189,10 @@
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 10px;
 		padding: 6px 12px;
+	}
+
+	.tag-more {
+		opacity: 0.6;
 	}
 
 	.btn-tag {

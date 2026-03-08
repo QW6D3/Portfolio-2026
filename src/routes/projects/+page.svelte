@@ -6,22 +6,22 @@
 	import type { Project } from '$lib/data/projects';
 	import { tick } from 'svelte';
 
-	// ── Search ────────────────────────────────────────────────
+	let pendingSearch = '';
 	let inputSearchBar = '';
 
-	// ── Filter popup state ───────────────────────────────────
 	let filterOpen = false;
 	let filterPopupEl: HTMLDivElement;
 	let filterBtnEl: HTMLButtonElement;
 	let popupHeight = 0;
 	let popupContentEl: HTMLDivElement;
 
-	// ── Active filters ────────────────────────────────────────
+	let mobileFilterHeight = 0;
+	let mobileFilterContentEl: HTMLDivElement;
+
 	type FilterTag = { category: string; value: string; id: string };
 	let activeFilters: FilterTag[] = [];
 	let removingIds: Set<string> = new Set();
 
-	// ── Filter options ────────────────────────────────────────
 	const years = ['2025', '2024', '2023'];
 	const filterOptions: Record<string, string[]> = {
 		Type: ['Web App', 'Mobile', 'API', 'Open Source', 'CLI', 'Design System'],
@@ -29,7 +29,6 @@
 		Stack: ['SvelteKit', 'React', 'Next.js', 'Node.js', 'PostgreSQL', 'Docker']
 	};
 
-	// ── Custom select / combobox state ───────────────────────
 	let yearOpen = false;
 	let yearBtnEl: HTMLButtonElement;
 	let yearListHeight = 0;
@@ -47,18 +46,21 @@
 	let comboBtnEls: Record<string, HTMLButtonElement> = {};
 	let comboListEls: Record<string, HTMLUListElement> = {};
 
-	// ── Gestion de la hauteur du popup (Fix boucle infinie) ──
 	async function updatePopupHeight() {
-		if (filterOpen && popupContentEl) {
-			await tick();
-			const newH = popupContentEl.scrollHeight;
-			if (newH !== popupHeight) popupHeight = newH;
+		if (!filterOpen || !popupContentEl) return;
+		await tick();
+		const newH = popupContentEl.scrollHeight;
+		if (Math.abs(newH - popupHeight) > 1) {
+			popupHeight = newH;
 		}
 	}
 
-	// On surveille les changements de filtres pour ajuster la hauteur
-	$: if (activeFilters || filterOpen) {
-		updatePopupHeight();
+	// Correction : Utilisation de 'void' pour satisfaire no-unused-expressions
+	// tout en déclenchant la réactivité Svelte sur ces variables.
+	$: {
+		void activeFilters;
+		void comboStates;
+		if (filterOpen) updatePopupHeight();
 	}
 
 	$: comboFiltered = Object.fromEntries(
@@ -68,7 +70,6 @@
 		])
 	);
 
-	// ── Toggle filter popup ───────────────────────────────────
 	async function toggleFilter() {
 		if (!filterOpen) {
 			Object.keys(comboStates).forEach((k) => {
@@ -98,7 +99,15 @@
 		setTimeout(() => (filterOpen = false), 420);
 	}
 
-	// ── Year dropdown ─────────────────────────────────────────
+	async function toggleMobileFilter() {
+		if (mobileFilterHeight === 0) {
+			await tick();
+			mobileFilterHeight = mobileFilterContentEl?.scrollHeight ?? 0;
+		} else {
+			mobileFilterHeight = 0;
+		}
+	}
+
 	async function toggleYear(e: MouseEvent) {
 		e.stopPropagation();
 		if (!yearOpen) {
@@ -113,7 +122,6 @@
 		}
 	}
 
-	// ── Combobox ──────────────────────────────────────────────
 	async function toggleCombo(cat: string, e: MouseEvent) {
 		e.stopPropagation();
 		const isOpen = comboStates[cat].open;
@@ -147,7 +155,6 @@
 		}
 	}
 
-	// ── Outside click ─────────────────────────────────────────
 	function handleOutsideClick(e: MouseEvent) {
 		const target = e.target as Node;
 
@@ -182,14 +189,17 @@
 		}
 	}
 
-	// ── Add / remove filters ──────────────────────────────────
 	function addFilter(category: string, value: string) {
 		if (activeFilters.some((f) => f.category === category && f.value === value)) return;
 		activeFilters = [
 			...activeFilters,
 			{ category, value, id: `${category}-${value}-${Date.now()}` }
 		];
-		updatePopupHeight();
+		tick().then(() => {
+			if (popupContentEl) updatePopupHeight();
+			if (mobileFilterContentEl && mobileFilterHeight > 0)
+				mobileFilterHeight = mobileFilterContentEl.scrollHeight;
+		});
 	}
 
 	async function removeFilter(id: string) {
@@ -197,50 +207,122 @@
 		await new Promise((r) => setTimeout(r, 310));
 		activeFilters = activeFilters.filter((f) => f.id !== id);
 		removingIds = new Set([...removingIds].filter((x) => x !== id));
-		updatePopupHeight();
 	}
 
-	// ── Filtered projects ─────────────────────────────────────
-	$: filteredProjects = projects.filter((p: Project) => {
-		const matchSearch =
-			inputSearchBar.trim() === '' ||
-			p.title.toLowerCase().includes(inputSearchBar.toLowerCase()) ||
-			p.tags.some((t) => t.toLowerCase().includes(inputSearchBar.toLowerCase()));
+	function triggerSearch() {
+		inputSearchBar = pendingSearch;
+	}
 
-		const matchFilters = activeFilters.every((f) => {
-			if (f.category === 'Année') return p.year?.toString() === f.value;
-			if (f.category === 'Type') return p.type === f.value;
-			if (f.category === 'Langages') return p.tags?.includes(f.value);
-			if (f.category === 'Stack') return p.tags?.includes(f.value);
-			return true;
+	function handleSearchKey(e: KeyboardEvent) {
+		if (e.key === 'Enter') triggerSearch();
+	}
+
+	function applyFilters(list: Project[]): Project[] {
+		return list.filter((p: Project) => {
+			const matchSearch =
+				inputSearchBar.trim() === '' ||
+				p.title.toLowerCase().includes(inputSearchBar.toLowerCase()) ||
+				p.tags.some((t) => t.toLowerCase().includes(inputSearchBar.toLowerCase()));
+
+			const filtersByCategory: Record<string, string[]> = {};
+			for (const f of activeFilters) {
+				if (!filtersByCategory[f.category]) filtersByCategory[f.category] = [];
+				filtersByCategory[f.category].push(f.value);
+			}
+
+			const matchFilters = Object.entries(filtersByCategory).every(([cat, vals]) => {
+				if (cat === 'Année') return vals.some((v) => p.year?.toString() === v);
+				if (cat === 'Type') return vals.some((v) => p.type === v);
+				if (cat === 'Langages') return vals.some((v) => p.tags?.includes(v));
+				if (cat === 'Stack') return vals.some((v) => p.tags?.includes(v));
+				return true;
+			});
+
+			return matchSearch && matchFilters;
 		});
+	}
 
-		return matchSearch && matchFilters;
-	});
+	$: filteredProjects = (() => {
+		void inputSearchBar;
+		void activeFilters;
+		return applyFilters(projects);
+	})();
 
-	$: filteredUpcoming = upcomingProjects.filter((p: Project) => {
-		const matchSearch =
-			inputSearchBar.trim() === '' ||
-			p.title.toLowerCase().includes(inputSearchBar.toLowerCase()) ||
-			p.tags.some((t) => t.toLowerCase().includes(inputSearchBar.toLowerCase()));
+	$: filteredUpcoming = (() => {
+		void inputSearchBar;
+		void activeFilters;
+		return applyFilters(upcomingProjects);
+	})();
 
-		const matchFilters = activeFilters.every((f) => {
-			if (f.category === 'Année') return p.year?.toString() === f.value;
-			if (f.category === 'Type') return p.type === f.value;
-			if (f.category === 'Langages') return p.tags?.includes(f.value);
-			if (f.category === 'Stack') return p.tags?.includes(f.value);
-			return true;
-		});
+	let visibleIds = new Set<string>();
+	let enteringIds = new Set<string>();
+	let exitingIds = new Set<string>();
 
-		return matchSearch && matchFilters;
-	});
+	$: {
+		const allFiltered = [...filteredProjects, ...filteredUpcoming];
+		const newIds = new Set(allFiltered.map((p) => p.id));
+		const entering = [...newIds].filter((id) => !visibleIds.has(id));
+		const exiting = [...visibleIds].filter((id) => !newIds.has(id));
+		enteringIds = new Set(entering);
+		exitingIds = new Set(exiting);
+		visibleIds = newIds;
+	}
+
+	const MAX_TAGS = 3;
 </script>
 
 <svelte:window on:click={handleOutsideClick} />
 
 <main class="project-page">
 	<Header />
+
 	<div class="page-container">
+		<div class="projects-container">
+			<div class="section-header-main finalize-header">
+				<span class="section-title-main">Projets finalisés</span>
+				<span class="section-line-main"></span>
+			</div>
+
+			{#if filteredProjects.length === 0}
+				<p class="no-results">Aucun projet trouvé.</p>
+			{:else}
+				<div class="projects-grid">
+					{#each filteredProjects as project (project.id)}
+						<div
+							class="card-wrapper finalize-card"
+							class:card-entering={enteringIds.has(project.id)}
+							class:card-exiting={exitingIds.has(project.id)}
+						>
+							<ProjectCard {project} maxTags={MAX_TAGS} />
+						</div>
+					{/each}
+				</div>
+			{/if}
+
+			<div class="section-header-main upcoming-header">
+				<span class="section-title-main">Projets à venir</span>
+				<span class="section-line-main"></span>
+			</div>
+
+			{#if filteredUpcoming.length === 0}
+				<p class="no-results">Aucun projet à venir correspondant.</p>
+			{:else}
+				<div class="projects-grid">
+					{#each filteredUpcoming as project (project.id)}
+						<div
+							class="card-wrapper upcoming-card"
+							class:card-entering={enteringIds.has(project.id)}
+							class:card-exiting={exitingIds.has(project.id)}
+						>
+							<ProjectCard {project} maxTags={MAX_TAGS} />
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	</div>
+
+	<div class="desktop-search-wrapper">
 		<div class="research-container">
 			<h1 class="search-title">Découvrez mes projets</h1>
 
@@ -249,12 +331,13 @@
 					<input
 						type="text"
 						class="input-search"
-						bind:value={inputSearchBar}
+						bind:value={pendingSearch}
+						on:keydown={handleSearchKey}
 						placeholder="Rechercher un projet ou un tag…"
 					/>
 				</div>
 
-				<div class="lower-part desktop-only">
+				<div class="lower-part">
 					<div class="filter-row">
 						<button
 							class="filter-btn"
@@ -264,11 +347,9 @@
 						>
 							<SlidersHorizontal color="#ffffff" strokeWidth={1.5} size={18} />
 						</button>
-
 						{#if activeFilters.length > 0}
-							<span class="separator">|</span>
+							<span class="separator" aria-hidden="true">|</span>
 						{/if}
-
 						<div class="tags-row">
 							{#each activeFilters as f (f.id)}
 								<span class="filter-tag" class:removing={removingIds.has(f.id)}>
@@ -289,7 +370,7 @@
 						<div
 							class="filter-popup"
 							bind:this={filterPopupEl}
-							style="height: {popupHeight}px;"
+							style="height:{popupHeight}px;"
 							on:click|stopPropagation
 						>
 							<div class="filter-popup-inner">
@@ -303,7 +384,6 @@
 											<X size={15} strokeWidth={2} />
 										</button>
 									</div>
-
 									<div class="filter-grid">
 										<div class="filter-section">
 											<div class="section-header">
@@ -325,7 +405,6 @@
 												</button>
 											</div>
 										</div>
-
 										{#each Object.entries(filterOptions) as [cat] (cat)}
 											<div class="filter-section">
 												<div class="section-header">
@@ -361,45 +440,112 @@
 					{/if}
 				</div>
 
-				<div class="button-tag" class:visible={inputSearchBar.length > 0}></div>
+				<div class="button-tag" class:visible={pendingSearch.length > 0}></div>
 				<div class="box-button">
-					<div class="button-search" class:visible={inputSearchBar.length > 0}>
+					<button
+						class="button-search"
+						class:visible={pendingSearch.length > 0}
+						on:click={triggerSearch}
+						aria-label="Rechercher"
+					>
 						<Search color="#ffffff" size={18} />
-					</div>
+					</button>
 				</div>
 			</div>
 		</div>
+	</div>
 
-		<div class="projects-container">
-			<div class="section-header-main">
-				<span class="section-title-main">Projets finalisés</span>
-				<span class="section-line-main"></span>
+	<div class="mobile-search-wrapper">
+		<div class="mobile-search-bar">
+			<div class="mobile-top-row">
+				<button
+					class="mobile-filter-btn"
+					on:click={toggleMobileFilter}
+					aria-label="Filtres"
+					class:active={mobileFilterHeight > 0}
+				>
+					<SlidersHorizontal
+						size={18}
+						strokeWidth={1.5}
+						color={mobileFilterHeight > 0 ? 'var(--color-primary)' : 'rgba(255,255,255,0.6)'}
+					/>
+				</button>
+				<input
+					type="text"
+					class="mobile-input"
+					bind:value={pendingSearch}
+					on:keydown={handleSearchKey}
+					placeholder="Rechercher…"
+				/>
+				<button class="mobile-search-submit" on:click={triggerSearch} aria-label="Rechercher">
+					<Search size={16} color="rgba(255,255,255,0.4)" />
+				</button>
 			</div>
 
-			{#if filteredProjects.length === 0}
-				<p class="no-results">Aucun projet trouvé.</p>
-			{:else}
-				<div class="projects-grid">
-					{#each filteredProjects as project (project.id)}
-						<ProjectCard {project} />
+			<div class="mobile-filter-panel" style="height:{mobileFilterHeight}px;">
+				<div class="mobile-filter-content" bind:this={mobileFilterContentEl}>
+					{#if activeFilters.length > 0}
+						<div class="mobile-active-tags">
+							{#each activeFilters as f (f.id)}
+								<span class="filter-tag" class:removing={removingIds.has(f.id)}>
+									<span class="tag-label">{f.category}:{f.value}</span>
+									<button class="tag-remove" on:click={() => removeFilter(f.id)}>
+										<X size={11} strokeWidth={2.5} />
+									</button>
+								</span>
+							{/each}
+						</div>
+					{/if}
+					<div class="filter-section">
+						<div class="section-header">
+							<span class="filter-section-title">Année</span>
+							<span class="section-line"></span>
+						</div>
+						<div class="year-select" on:click|stopPropagation>
+							<button
+								class="select-trigger"
+								class:open={yearOpen}
+								bind:this={yearBtnEl}
+								on:click={toggleYear}
+							>
+								<span
+									>{activeFilters.find((f) => f.category === 'Année')?.value ??
+										'Sélectionner…'}</span
+								>
+								<ChevronDown size={14} strokeWidth={1.8} />
+							</button>
+						</div>
+					</div>
+					{#each Object.entries(filterOptions) as [cat] (cat)}
+						<div class="filter-section">
+							<div class="section-header">
+								<span class="filter-section-title">{cat}</span>
+								<span class="section-line"></span>
+							</div>
+							<div class="combo-select" on:click|stopPropagation>
+								<button
+									class="select-trigger"
+									class:open={comboStates[cat].open}
+									bind:this={comboBtnEls[cat]}
+									on:click={(e) => toggleCombo(cat, e)}
+								>
+									<span class="combo-trigger-text">
+										{#if activeFilters.filter((f) => f.category === cat).length > 0}
+											{activeFilters
+												.filter((f) => f.category === cat)
+												.map((f) => f.value)
+												.join(', ')}
+										{:else}
+											Sélectionner…
+										{/if}
+									</span>
+									<ChevronDown size={14} strokeWidth={1.8} />
+								</button>
+							</div>
+						</div>
 					{/each}
 				</div>
-			{/if}
-
-			<div class="section-header-main upcoming-header">
-				<span class="section-title-main">Projets à venir</span>
-				<span class="section-line-main"></span>
 			</div>
-
-			{#if filteredUpcoming.length === 0}
-				<p class="no-results">Aucun projet à venir correspondant.</p>
-			{:else}
-				<div class="projects-grid">
-					{#each filteredUpcoming as project (project.id)}
-						<ProjectCard {project} />
-					{/each}
-				</div>
-			{/if}
 		</div>
 	</div>
 </main>
@@ -468,13 +614,38 @@
 	$btn-radius: 9px;
 	$ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 	$dur: 0.42s;
+	$mobile-bar-h: 72px;
+
+	.project-page {
+		position: relative;
+		min-height: 100dvh;
+	}
 
 	.page-container {
-		min-height: calc(100dvh - 88px);
-		display: flex;
-		flex-direction: column;
-		padding: 100px 0 48px;
+		padding-top: clamp(220px, 28vh, 320px);
+		padding-bottom: 60px;
 		box-sizing: border-box;
+
+		@media (max-width: 767px) {
+			padding-top: 80px;
+			padding-bottom: calc($mobile-bar-h + 80px);
+		}
+	}
+
+	.desktop-search-wrapper {
+		position: fixed;
+		top: 15%;
+		left: 0;
+		right: 0;
+		z-index: 100;
+		display: flex;
+		justify-content: center;
+		padding: 24px 24px 0;
+		pointer-events: none;
+
+		@media (max-width: 767px) {
+			display: none;
+		}
 	}
 
 	.research-container {
@@ -482,14 +653,12 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 20px;
-		flex-shrink: 0;
-		padding: 0 24px;
+		pointer-events: auto;
+		width: 100%;
+		max-width: 850px;
 	}
 
 	.search-title {
-		font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-		font-weight: 700;
-		color: var(--color-text);
 		margin: 0;
 		opacity: 0.25;
 		filter: blur(6px);
@@ -572,6 +741,9 @@
 		font-size: 1rem;
 		flex-shrink: 0;
 		user-select: none;
+		width: 1ch;
+		text-align: center;
+		line-height: 1;
 	}
 
 	.tags-row {
@@ -631,7 +803,6 @@
 		}
 	}
 
-	// ── Filter popup ──────────────────────────────────────────
 	.filter-popup {
 		position: absolute;
 		top: calc(100% + 10px);
@@ -659,7 +830,7 @@
 
 	.popup-close-row {
 		display: flex;
-		justify-content: flex-end;
+		justify-content: flex-start;
 		padding-top: 14px;
 		padding-bottom: 2px;
 	}
@@ -777,7 +948,6 @@
 		white-space: nowrap;
 	}
 
-	// ── Dropdowns fixed ───────────────────────────────────────
 	:global(.dropdown-fixed) {
 		position: fixed;
 		list-style: none;
@@ -863,7 +1033,6 @@
 		text-align: center;
 	}
 
-	// ── Search button corner ──────────────────────────────────
 	.button-tag {
 		position: absolute;
 		bottom: -1px;
@@ -923,6 +1092,7 @@
 			height: 100%;
 			background-color: var(--color-primary);
 			border-radius: $btn-radius;
+			border: none;
 			cursor: pointer;
 			transform: scale(0);
 			transition:
@@ -937,25 +1107,121 @@
 		}
 	}
 
-	// ── Projects container & sections ─────────────────────────
-	.projects-container {
-		flex: 1;
-		margin-top: 48px;
-		padding: 0 clamp(24px, 6vw, 120px);
-		overflow-y: auto;
-		display: flex;
-		flex-direction: column;
-		gap: 0;
+	.mobile-search-wrapper {
+		display: none;
+
+		@media (max-width: 767px) {
+			display: flex;
+			flex-direction: column;
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			z-index: 200;
+			padding: 0 16px 20px;
+			background: linear-gradient(to top, var(--color-bg) 60%, transparent);
+			padding-top: 24px;
+		}
 	}
 
-	// En-tête de section (style popup)
+	.mobile-search-bar {
+		display: flex;
+		flex-direction: column;
+		background: var(--color-text);
+		border-radius: 16px;
+		overflow: hidden;
+	}
+
+	.mobile-top-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 14px 16px;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.mobile-filter-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		padding: 0;
+		flex-shrink: 0;
+		transition: transform 0.3s $ease-out-expo;
+
+		&.active {
+			transform: rotate(90deg);
+		}
+	}
+
+	.mobile-input {
+		flex: 1;
+		background: transparent;
+		border: none;
+		outline: none;
+		color: var(--color-bg);
+		font-size: 0.95rem;
+		&::placeholder {
+			color: var(--color-bg);
+			opacity: 0.4;
+		}
+	}
+
+	.mobile-search-submit {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		padding: 0;
+		flex-shrink: 0;
+	}
+
+	.mobile-filter-panel {
+		overflow: hidden;
+		transition: height $dur $ease-out-expo;
+		width: 100%;
+	}
+
+	.mobile-filter-content {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		padding: 0 16px 16px;
+	}
+
+	.mobile-active-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+
+	.projects-container {
+		padding: 0 clamp(16px, 6vw, 120px);
+		display: flex;
+		flex-direction: column;
+
+		@media (max-width: 767px) {
+			padding: 0 16px;
+		}
+	}
+
 	.section-header-main {
 		display: flex;
 		align-items: center;
 		gap: 16px;
 		margin-bottom: 24px;
-
+		&.finalize-header {
+			animation: fadeInContent 1.5s $ease-out-expo both;
+			animation-delay: 0.5s !important;
+		}
 		&.upcoming-header {
+			animation: fadeInContent 1.5s $ease-out-expo both;
+			animation-delay: 1s !important;
 			margin-top: 52px;
 		}
 	}
@@ -965,7 +1231,7 @@
 		font-weight: 200;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: rgba(255, 255, 255, 0.4);
+		color: var(--color-text);
 		white-space: nowrap;
 		flex-shrink: 0;
 	}
@@ -973,7 +1239,7 @@
 	.section-line-main {
 		flex: 1;
 		height: 1px;
-		background: rgba(255, 255, 255, 0.08);
+		background: rgba(102, 102, 102, 0.5);
 	}
 
 	.projects-grid {
@@ -993,6 +1259,26 @@
 		}
 	}
 
+	.card-wrapper {
+		animation: cardEnter 0.55s $ease-out-expo both;
+
+		@for $i from 1 through 16 {
+			&:nth-child(#{$i}) {
+				animation-delay: #{1.6 + ($i - 1) * 0.06}s;
+			}
+		}
+	}
+
+	.card-entering {
+		animation: cardEnter 1.5s $ease-out-expo both;
+		animation-delay: 0.9s !important;
+	}
+
+	.card-exiting {
+		animation: cardExit 0.3s $ease-out-expo both;
+		pointer-events: none;
+	}
+
 	.no-results {
 		text-align: center;
 		color: var(--color-text);
@@ -1001,7 +1287,28 @@
 		padding: 24px 0;
 	}
 
-	// ── Keyframes ─────────────────────────────────────────────
+	@keyframes cardEnter {
+		from {
+			opacity: 0;
+			transform: translateY(28px) scale(0.97);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes cardExit {
+		from {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(-12px) scale(0.96);
+		}
+	}
+
 	@keyframes expandBar {
 		from {
 			width: 0;
@@ -1010,6 +1317,7 @@
 			width: clamp(150px, 100%, 850px);
 		}
 	}
+
 	@keyframes fadeInContent {
 		from {
 			opacity: 0;
@@ -1020,6 +1328,7 @@
 			transform: translateY(0);
 		}
 	}
+
 	@keyframes revealTitle {
 		from {
 			opacity: 0.25;
@@ -1032,6 +1341,7 @@
 			transform: translateY(0);
 		}
 	}
+
 	@keyframes tagIn {
 		from {
 			opacity: 0;

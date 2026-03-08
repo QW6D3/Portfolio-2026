@@ -18,61 +18,48 @@ export interface Project {
 // ── Projets finalisés ─────────────────────────────────────
 export const projects: Project[] = [
 	{
-		id: '1',
-		title: 'Mon premier projet',
-		description: 'Une description',
-		image: '/path/to/img.jpg',
-		tags: ['Svelte', 'TypeScript'],
-		year: 2024,
+		id: 'rezav',
+		title: 'REZAV',
+		description:
+			'Plateforme de numérisation des réservations de matériel audiovisuel. Remplace les processus papier par un système complet de gestion : workflow de validation professeur, tableau de bord étudiant et emploi du temps dynamique des ressources.',
+		image: '/projects/rezav-preview.jpg',
+		tags: ['React', 'Redux', 'Node.js', 'MongoDB', 'SCSS', 'Docker'],
+		year: 2025,
 		type: 'Web App',
-		colors: '#ff3e00',
-		logo: 'logo.svg',
+		colors: '#7C3AED',
+		github: 'https://github.com/perigmes/REZAV',
+		logo: '/images/mobile_app_logo.svg',
 		font: "'Inter', sans-serif"
 	},
 	{
-		id: '2',
-		title: 'Design Minimal',
-		description: 'Projet sans logo image',
-		image: '',
-		tags: ['UI', 'UX'],
-		year: 2023,
-		type: 'Design System',
-		colors: '#3498db',
-		font: "'Playfair Display', serif"
-	},
-	{
-		id: '3',
-		title: 'API REST',
-		description: 'Une API construite avec Node.js et PostgreSQL',
-		image: '',
-		tags: ['Node.js', 'PostgreSQL', 'TypeScript'],
-		year: 2023,
-		type: 'API',
-		colors: '#2ecc71',
-		github: 'https://github.com/user/api-rest'
+		id: 'bdl-andros',
+		title: 'BDL - Andros UF',
+		description:
+			"Logiciel industriel \"Bout De Ligne\" développé pour l'usine laitière d'Auneau. Optimise la traçabilité des palettes et la détection d'anomalies en temps réel via des requêtes SQL croisées sur Microsoft SQL Server.",
+		image: '/projects/andros-preview.jpg',
+		tags: ['Svelte', 'PHP', 'MS SQL Server', 'SQL'],
+		year: 2024,
+		type: 'Industrial Tool',
+		colors: '#7ab4ff',
+		logo: '/images/andros-uf.png',
+		font: "'Roboto', sans-serif"
 	}
 ];
 
 // ── Projets à venir ───────────────────────────────────────
 export const upcomingProjects: Project[] = [
 	{
-		id: 'upcoming-1',
-		title: 'Projet à venir 1',
-		description: 'Description du projet à venir',
+		id: 'loup-garou-mc',
+		title: 'Loup-Garou de Thiercelieux',
+		description:
+			"Adaptation complète du célèbre jeu de société en plugin Minecraft. Inclut la gestion automatisée des rôles, les cycles jour/nuit, des menus d'interface personnalisés et un système de discussion dynamique.",
 		image: '',
-		tags: ['SvelteKit', 'TypeScript'],
-		year: 2025,
-		type: 'Web App',
-		colors: '#8b5cf6'
-	},
-	{
-		id: 'upcoming-2',
-		title: 'Projet à venir 2',
-		description: 'Description du projet à venir',
-		image: '',
-		tags: ['React', 'Node.js'],
-		year: 2025,
-		type: 'API',
-		colors: '#f59e0b'
+		tags: ['Java', 'Spigot', 'Game Dev'],
+		year: 2026,
+		type: 'Game Plugin',
+		colors: '#ffa260',
+		logo: '/images/loup-garou.png',
+		github: 'https://github.com/QW6D3/Lougagrou',
+		font: "'Minecraftia', sans-serif"
 	}
 ];
