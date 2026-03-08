@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { Renderer, Program, Mesh, Triangle } from 'ogl';
+	import { hexToRgb } from '$lib/utilities/color';
 
-	// --- Props ---
+	// --- Props --
+	export let timeOffset: number = 0;
 	export let timeSpeed: number = 0.25;
 	export let colorBalance: number = 0.0;
 	export let warpStrength: number = 1.0;
@@ -27,6 +29,9 @@
 	export let color3: string = '#B19EEF';
 	export let className: string = '';
 
+	let _timeOffset = timeOffset;
+	$: _timeOffset = timeOffset;
+
 	// --- DOM ref ---
 	let container: HTMLDivElement;
 	let canvas: HTMLCanvasElement;
@@ -34,17 +39,6 @@
 	// --- Cleanup refs ---
 	let rafId: number;
 	let ro: ResizeObserver;
-
-	// --- Helpers ---
-	function hexToRgb(hex: string): [number, number, number] {
-		const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-		if (!result) return [1, 1, 1];
-		return [
-			parseInt(result[1], 16) / 255,
-			parseInt(result[2], 16) / 255,
-			parseInt(result[3], 16) / 255
-		];
-	}
 
 	// --- Shaders ---
 	const vertex = /* glsl */ `#version 300 es
@@ -199,7 +193,7 @@ void main() {
 
 		const t0 = performance.now();
 		const loop = (t: number) => {
-			(program.uniforms.iTime as { value: number }).value = (t - t0) * 0.001;
+			(program.uniforms.iTime as { value: number }).value = (t - t0) * 0.001 + _timeOffset;
 			renderer.render({ scene: mesh });
 			rafId = requestAnimationFrame(loop);
 		};

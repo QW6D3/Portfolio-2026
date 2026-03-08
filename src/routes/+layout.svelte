@@ -5,6 +5,19 @@
 	import { isMenuOpen } from '$lib/stores/main-store';
 	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 	import { page } from '$app/stores';
+	import { onNavigate } from '$app/navigation';
+
+	// Active les View Transitions entre chaque navigation
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
 
 	injectSpeedInsights();
 
