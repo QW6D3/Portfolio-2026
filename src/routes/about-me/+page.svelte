@@ -11,23 +11,30 @@
 
 	onMount(() => {
 		visible = true;
-
 		const mainContent = document.querySelector('.main-contents') as HTMLElement;
 
+		// On stocke les valeurs exactes avant modification
 		const originalPadding = mainContent?.style.padding;
+		const originalOverflowY = mainContent?.style.overflowY;
+		const originalBodyOverflow = document.body.style.overflow;
 
 		if (mainContent) {
 			mainContent.style.setProperty('padding', '0', 'important');
 			mainContent.style.setProperty('overflow-y', 'hidden', 'important');
 		}
-		document.body.style.overflow = 'hidden';
+		document.body.style.setProperty('overflow', 'hidden', 'important');
+
 		return () => {
-			if (mainContent) {
-				mainContent.style.padding = originalPadding || '';
-				mainContent.style.overflowY = 'auto';
-			}
-			document.body.style.overflow = 'auto';
 			visible = false;
+
+			if (mainContent) {
+				mainContent.style.removeProperty('padding');
+				mainContent.style.removeProperty('overflow-y');
+				if (originalPadding) mainContent.style.padding = originalPadding;
+				if (originalOverflowY) mainContent.style.overflowY = originalOverflowY;
+			}
+			document.body.style.removeProperty('overflow');
+			if (originalBodyOverflow) document.body.style.overflow = originalBodyOverflow;
 		};
 	});
 

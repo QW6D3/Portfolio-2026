@@ -87,9 +87,7 @@
 	@use '../styles/abstracts/variables' as *;
 
 	main {
-		overflow: hidden;
 		position: relative;
-		// Utilisation de la variable de fond claire/beige
 		background-color: var(--color-bg);
 		height: 100dvh;
 		width: 100%;
@@ -111,7 +109,6 @@
 		height: 100%;
 		background-color: var(--color-bg);
 		will-change: transform;
-		overflow: hidden;
 	}
 
 	.page-stack {
@@ -134,9 +131,10 @@
 	}
 
 	.main-contents {
+		height: 100%;
 		z-index: 3;
+		overflow-y: auto;
 		padding: $page-padding;
-		overflow: hidden;
 		-webkit-overflow-scrolling: touch;
 
 		transition:
