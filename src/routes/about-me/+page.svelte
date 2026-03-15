@@ -135,13 +135,14 @@
 					<div class="desktop-info">
 						<span class="line-wrapper">
 							<p class="anim-line">
-								Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
-								incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-								exercitation.
+								Passionné par l'équilibre entre design et développement, j'aime transformer des
+								idées complexes en expériences fluides et optimisées. Pour moi, un projet réussi
+								doit être aussi percutant visuellement que robuste techniquement. Je cherche
+								toujours la solution la plus juste : celle qui allie esthétique et performance.
 							</p>
 						</span>
 						<span class="line-wrapper">
-							<button class="btn-test anim-line">test</button>
+							<button class="btn-test anim-line">Télécharger mon CV</button>
 						</span>
 					</div>
 				</div>
