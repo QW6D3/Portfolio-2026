@@ -66,10 +66,7 @@
 				</h1>
 
 				<div class="description-container" style="transition-delay: 400ms;">
-					<p class="tagline">
-						Des expériences numériques où la <strong>rigueur technique</strong>
-						rencontre l'<strong>audace créative</strong>.
-					</p>
+					<p class="tagline">Étudiant, développeur, et quelqu'un qui fait attention aux détails.</p>
 				</div>
 
 				<div class="cta-group" style="transition-delay: 550ms;">
