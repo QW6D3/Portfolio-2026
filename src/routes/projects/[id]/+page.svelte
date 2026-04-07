@@ -236,7 +236,7 @@
 </main>
 
 <style>
-	/* ── BACK BUTTON ──────────────────────── */
+	/* ── BACK BUTTON ────────────────────────- */
 	.back-btn {
 		position: absolute;
 		top: 28px;
