@@ -1,7 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { json, error } from '@sveltejs/kit';
 import { Resend } from 'resend';
-import { RESEND_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 // ── Rate limiting ─────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -83,7 +83,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	}
 
 	// ── Send email via Resend ──────────────────────────────────
-	const resend = new Resend(RESEND_API_KEY);
+	const resend = new Resend(env.RESEND_API_KEY);
 	const subjectLabel = SUBJECT_LABELS[subject] ?? subject;
 
 	const { error: resendError } = await resend.emails.send({
