@@ -23,6 +23,8 @@ jobs:
 
       - name: Check Svelte Logic
         run: npm run check
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
       - name: Run Linting
         run: npm run lint
