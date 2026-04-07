@@ -20,10 +20,10 @@ export default ts.config(
 		languageOptions: {
 			globals: { ...globals.browser, ...globals.node }
 		},
+		// On définit les règles ici
 		rules: {
-			// typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
-			// see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
-			'no-undef': 'off'
+			'no-undef': 'off',
+			'svelte/no-navigation-without-resolve': 'off'
 		}
 	},
 	{
@@ -35,6 +35,10 @@ export default ts.config(
 				parser: ts.parser,
 				svelteConfig
 			}
+		},
+		// OU ICI pour être certain que ça s'applique aux fichiers .svelte
+		rules: {
+			'svelte/no-navigation-without-resolve': 'off'
 		}
 	}
 );
