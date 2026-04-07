@@ -623,12 +623,12 @@
 
 	.page-container {
 		padding-top: clamp(220px, 28vh, 320px);
-		padding-bottom: 60px;
+		padding-bottom: 25px;
 		box-sizing: border-box;
 
 		@media (max-width: 767px) {
+			position: relative;
 			padding-top: 80px;
-			padding-bottom: calc($mobile-bar-h + 80px);
 		}
 	}
 
@@ -1113,7 +1113,7 @@
 		@media (max-width: 767px) {
 			display: flex;
 			flex-direction: column;
-			position: fixed;
+			position: sticky;
 			bottom: 0;
 			left: 0;
 			right: 0;
@@ -1126,6 +1126,11 @@
 
 	.mobile-search-bar {
 		display: flex;
+		position: absolute;
+		width: 100%;
+		bottom: 0;
+		left: 50%;
+		transform: translate(-50%);
 		flex-direction: column;
 		background: var(--color-text);
 		border-radius: 16px;
@@ -1134,11 +1139,9 @@
 
 	.mobile-top-row {
 		display: flex;
-		align-items: center;
 		gap: 10px;
 		padding: 14px 16px;
 		width: 100%;
-		box-sizing: border-box;
 	}
 
 	.mobile-filter-btn {
@@ -1158,7 +1161,7 @@
 	}
 
 	.mobile-input {
-		flex: 1;
+		width: 100%;
 		background: transparent;
 		border: none;
 		outline: none;

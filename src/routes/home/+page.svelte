@@ -388,4 +388,9 @@
 			}
 		}
 	}
+	@media (max-width: 800px) {
+		.home-page {
+			overflow: hidden;
+		}
+	}
 </style>

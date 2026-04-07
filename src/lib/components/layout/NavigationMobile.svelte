@@ -40,6 +40,7 @@
 		transition: visibility 0.4s;
 		contain: content;
 		transform: translateZ(0);
+		height: 100vh;
 
 		// Configuration du gradient animé (Mode Clair)
 		background: linear-gradient(
@@ -91,11 +92,11 @@
 	.menu-wrapper {
 		box-sizing: border-box;
 		width: 60%;
-		height: 100%;
+		height: 100vh;
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		padding: calc(#{$page-padding} * 1.5);
+		padding: calc(#{$page-padding} * 1.2);
 		position: relative;
 	}
 
@@ -127,7 +128,7 @@
 
 		ul {
 			list-style: none;
-			padding: 0 0 0 5px;
+			padding: 0;
 			margin: 0;
 			display: flex;
 			flex-direction: column;
@@ -147,7 +148,7 @@
 			text-decoration: none;
 			color: var(--color-bg);
 			font-family: var(--font-title);
-			font-size: var(--font-size-md);
+			font-size: 1rem;
 			font-weight: 900;
 			letter-spacing: 0em;
 			text-transform: uppercase;

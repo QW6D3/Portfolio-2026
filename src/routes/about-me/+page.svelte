@@ -306,11 +306,9 @@
 
 				.hero-inner {
 					width: 100%;
-					height: 100%;
 					padding: $pad;
 					display: flex;
 					flex-direction: column;
-					justify-content: flex-end;
 					align-items: center;
 					z-index: 2;
 

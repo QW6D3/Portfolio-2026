@@ -19,10 +19,13 @@
 		a {
 			text-decoration: none;
 			color: black;
-			font-weight: 300;
+			font-weight: 200;
+			letter-spacing: -0.02em;
+			transition: all 0.15s ease;
 
 			&:hover {
-				color: rgb(97, 126, 97);
+				color: var(--color-primary);
+				transition: all 0.3s ease;
 			}
 		}
 	}
